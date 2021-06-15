@@ -2,6 +2,7 @@
 from binance.client import Client
 import datetime as dt
 import pandas as pd
+import time
 
 
 class Program:
@@ -11,17 +12,33 @@ class Program:
 
         # What to trade
         self.symbol_trade = 'BTCUSDT'
-
         # Order quantity in $
-        # order_dollar = 12
+        order_dollar = 10
+        self.infos = self.client.futures_account()
+        print(self.infos)
+
+        self.current_balance = float(self.infos["totalMarginBalance"])
+        self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
+
+        print(self.current_balance)
+        print(self.balance_available)
 
         self.interval_unit = "5T"
         self.long = False
+        self.download_mode = True
+        csv_file = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests5.csv'
+        csv_file2 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests5.csv'
 
-        self.data_range = 750  # Seems good values, ~10h of data
+        if not self.download_mode:
+            import csv
+            file = open(csv_file2)
+            reader = csv.reader(file)
+            self.data_range = len(list(reader)) - 2
+        else:
+            self.data_range = 750  # Seems good values, ~10h of data. Min is 600 cuz ema.
         self.study_range = self.data_range - 600
 
-        self.debug_mode = True
+        self.debug_mode = False
 
         self.debug_trades = []
 
@@ -30,24 +47,21 @@ class Program:
         self.risk_ratio = 0.675
         self.list_risk_ratio = [2, 4, 6, 7, 8, 9, 10]
         self.buffer = 0.001
-        self.buffer = 0
-        self.ema_buffer = 0.004
+        self.ema_buffer = 0.004  # Only looked to lower win rate
+        self.macd_hist_buffer = 0.5  # This one need testing.
 
         self.risk_per_trade = 21
         self.risk_per_trade = 1 - self.risk_per_trade / 100
-
-        self.download_mode = False
 
         if self.download_mode:
             self.data = Program.data(self)
             # self.data.to_csv(r'C:\Users\darwh\Documents\btc_chart_excel_short_tests2.csv')
         else:
-            self.data = pd.read_csv(r'C:\Users\darwh\Documents\btc_chart_excel_short_tests2.csv')
-            print(self.data)
+            self.data = pd.read_csv(csv_file)
 
         self.ema_trend = Program.ema(self, 600)
         self.ema_fast = Program.ema(self, 150)
-        self.money = 100
+        self.money = 200
         self.start_money = self.money
 
         Program.macd(self)
@@ -55,15 +69,14 @@ class Program:
         self.bull_indexes, self.bear_indexes, self.fake_bull_indexes, self.fake_bear_indexes = \
             Program.macd_trend_data(self)
 
-        self.longuest_macd_indexes = Program.macd_last_cross(self)
-        print(self.longuest_macd_indexes)
+        self.longest_macd_indexes = Program.macd_last_cross(self)
         self.first_cross = Program.first_macd_cross(self)
-        print(self.first_cross)
 
         self.trade_count = 0
         self.trade_won = 0
         self.trade_lost = 0
         self.trade_aborted = False
+        self.trade_in_going = False
 
         self.short_won = 0
         self.short_lost = 0
@@ -75,15 +88,17 @@ class Program:
 
         list_r = Program.high_low_finder_v2(self)
 
-        self.low_local, self.low_prices_indexes = list_r[0], list_r[1]
-        self.low_macd, self.low_macd_indexes = list_r[2], list_r[3]
-        self.low_wicks, self.low_wicks_indexes = list_r[4], list_r[5]
+        self.high_local, self.high_prices_indexes = list_r[0], list_r[1]
+        self.high_wicks, self.high_wicks_indexes = list_r[2], list_r[3]
+        self.high_macd, self.high_macd_indexes = list_r[4], list_r[5]
 
-        self.high_local, self.high_prices_indexes = list_r[6], list_r[7]
-        self.high_macd, self.high_macd_indexes = list_r[8], list_r[9]
-        self.high_wicks, self.high_wicks_indexes = list_r[10], list_r[11]
+        self.low_local, self.low_prices_indexes = list_r[6], list_r[7]
+        self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
+        self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
 
-        for j in range(1):
+        while True:
+            if self.download_mode:
+                Program.data_init(self)
 
             print("\nEntered long scanning\n")
 
@@ -95,12 +110,17 @@ class Program:
                 if self.low_local[i] > self.low_local[i + 1] and self.low_macd[i] < self.low_macd[i + 1] and self.long:
                     res = Program.macd_line_checker(self, self.low_prices_indexes[i], self.long)
                     if self.debug_mode:
-                        Program.debug_divergence_finder(self, self.high_prices_indexes, i, "long")
+                        Program.debug_divergence_finder(self, i)
                     if res and i + 1 != len(self.low_local) - 1:
                         if i + 1 != len(self.low_local) - 1:
-                            Program.trade_result_instruction(self, self.low_prices_indexes, i, "long")
+                            Program.trade_result_instruction(self, i)
                         else:
-                            print("Trade possible but not confirmed")
+                            print("Checking in 30 seconds.")
+                            # self.study_range+=1
+                            time.sleep(2)
+                            print("Checking...")
+                            self.data = Program.data(self)
+                            Program.trade_result_instruction(self, i)
 
             print("\nEntered short scanning\n")
 
@@ -108,20 +128,27 @@ class Program:
                 self.long = Program.buy_sell(self, self.high_prices_indexes[i])
                 if not self.long:
                     self.long = Program.buy_sell(self, self.high_prices_indexes[i + 1])
-                print(self.long)
-                print(self.high_local[i] < self.high_local[i+1] and self.high_macd[i] > self.high_macd[i + 1])  # bug with the high macd ??
+
+                print(self.high_local[i] < self.high_local[i+1])
+                print(self.high_macd[i] > self.high_macd[i + 1])
                 if self.high_local[i] < self.high_local[i + 1] and self.high_macd[i] > self.high_macd[i + 1] and not self.long:
                     res = Program.macd_line_checker(self, self.high_prices_indexes[i], self.long)
                     if self.debug_mode:
-                        # Program.debug_divergence_finder(self, self.high_prices_indexes, i + 1, "short")
-                        print("oui")
+                        Program.debug_divergence_finder(self, self.high_prices_indexes, i, "short")
                     if res:
                         if i + 1 != len(self.high_local) - 1:
-                            Program.trade_result_instruction(self, self.high_prices_indexes, i, "short")
+                            Program.trade_result_instruction(self, i)
                         else:
-                            print("Trade possible but not confirmed")
+                            Program.trade_result_instruction(self, i)
+                            while self.trade_in_going:
+                                # self.study_range+=1
+                                time.sleep(30)
+                                print("Checking...")
+                                self.data = pd.read_csv(csv_file2)
+                                Program.trade_result_instruction(self, i)
 
             Program.print_result(self)
+            time.sleep(300)
 
     def win_loss_streak_calculator(self):
         self.loss_streak = 0
@@ -140,20 +167,43 @@ class Program:
                 if n_loss > self.loss_streak:
                     self.loss_streak = n_loss
 
+    def data_init(self):
+        self.data = Program.data(self)
+        self.ema_trend = Program.ema(self, 600)
+        self.ema_fast = Program.ema(self, 150)
+
+        Program.macd(self)
+
+        self.bull_indexes, self.bear_indexes, self.fake_bull_indexes, self.fake_bear_indexes = \
+            Program.macd_trend_data(self)
+
+        self.longest_macd_indexes = Program.macd_last_cross(self)
+        self.first_cross = Program.first_macd_cross(self)
+
+        list_r = Program.high_low_finder_v2(self)
+
+        self.high_local, self.high_prices_indexes = list_r[0], list_r[1]
+        self.high_wicks, self.high_wicks_indexes = list_r[2], list_r[3]
+        self.high_macd, self.high_macd_indexes = list_r[4], list_r[5]
+
+        self.low_local, self.low_prices_indexes = list_r[6], list_r[7]
+        self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
+        self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
+
     def debug_divergence_finder(self, indexes, i, word):
         string_one = Program.get_time(self, indexes[i])
         string_two = Program.get_time(self, indexes[i + 1])
 
         print("Divergence for " + word + " at : " + str(string_one) + " and " + str(string_two))
 
-    def trade_result_instruction(self, prices_index, i, word):
+    def trade_result_instruction(self, i):
         # if self.debug_mode:
         #     Program.debug_divergence_finder(self, prices_index, i, word)
-
-        trade, confirmation = Program.init_trade(self, i)
-        if confirmation == self.long:
+        trade, confirmation, target_hit = Program.init_trade(self, i)
+        if confirmation == self.long and target_hit:
             Program.trade_and_money_update(self, trade)
             self.trade_count += 1
+            self.trade_in_going = False
 
     def debug_trade_parameters(self, sl, tp, enter_price, enter_price_index):
         date = Program.get_time(self, enter_price_index)
@@ -259,17 +309,21 @@ class Program:
             wicks_indexes = self.high_wicks_indexes
             cross_indexes = self.fake_bear_indexes
 
-        stop_loss = Program.stop_loss_calc(self, index)
+        stop_loss = Program.stop_loss_calc(self, index + 1)
         enter_price, enter_price_index = Program.enter_price_calc(cross_indexes, wicks_indexes,
-                                                                  index, prices)
+                                                                  index + 1, prices)
+
         take_profit = Program.take_profit_calc(self, enter_price, stop_loss)
         confirmation = Program.buy_sell(self, enter_price_index)
-        trade = Program.check_first_price_hit(self, stop_loss, take_profit, enter_price_index)
+        trade, target_hit = Program.check_first_price_hit(self, stop_loss, take_profit, enter_price_index)
 
-        if self.debug_mode:
+        if self.debug_mode and not self.trade_in_going:
             Program.debug_trade_parameters(self, stop_loss, take_profit, enter_price, enter_price_index)
+        if not target_hit and confirmation == self.long and not self.trade_in_going:
+            self.trade_in_going = True
+            print("Trade in going")
 
-        return trade, confirmation
+        return trade, confirmation, target_hit
 
     @staticmethod
     def enter_price_calc(macd_indexes, wicks_indexes, index, prices):
@@ -319,7 +373,8 @@ class Program:
                     res = True
 
             index += 1
-        return res
+
+        return res, target_hit
 
     def data(self):
         if self.interval_unit == '5T':
@@ -328,7 +383,7 @@ class Program:
             interval_data = '5m'
 
             data = pd.DataFrame(
-                self.client.get_historical_klines(symbol=self.symbol_trade, start_str=start_str,
+                self.client.futures_historical_klines(symbol=self.symbol_trade, start_str=start_str,
                                                   interval=interval_data))
 
             data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',
@@ -411,27 +466,39 @@ class Program:
             else:
                 successive_hist_macd_bear = 0
                 successive_hist_macd_bull = 0
-
-        Program.debug_macd_trend_data(self, bull_indexes, bear_indexes)
+        if self.debug_mode:
+            Program.debug_macd_trend_data(self, bull_indexes, bear_indexes, fake_bull, fake_bear)
 
         return bull_indexes, bear_indexes, fake_bull, fake_bear
 
-    def debug_macd_trend_data(self, bull_indexes, bear_indexes):
+    def debug_macd_trend_data(self, bull_indexes, bear_indexes, fake_bull, fake_bear):
         # Printing debugging code
         bearish_time = []
         bullish_time = []
+        fake_bull_time = []
+        fake_bear_time = []
 
         for i in range(len(bull_indexes)):
             date = Program.get_time(self, bull_indexes[i])
             bullish_time.append(date)
         print("MACD cross bullish at : ")
         print(bullish_time)
+        for i in range(len(fake_bull)):
+            date = Program.get_time(self, fake_bull[i])
+            fake_bull_time.append(date)
+        print("MACD fake bullish at : ")
+        print(fake_bull_time)
 
         for i in range(len(bear_indexes)):
             date = Program.get_time(self, bear_indexes[i])
             bearish_time.append(date)
         print("MACD cross bearish at : ")
         print(bearish_time)
+        for i in range(len(fake_bear)):
+            date = Program.get_time(self, fake_bear[i])
+            fake_bear_time.append(date)
+        print("MACD fake bearish at : ")
+        print(fake_bear_time)
 
     def macd_last_cross(self):
         if len(self.bear_indexes) > len(self.bull_indexes):
@@ -503,21 +570,22 @@ class Program:
 
             j += 1
 
-        print("High prices : ")
-        Program.idk(self, high_prices_i)
-        print(high_prices)
-        print("High wicks : ")
-        Program.idk(self, high_wicks_i)
-        print(high_wicks)
-        print("High macd : ")
-        print(high_macd)
-        Program.idk(self, high_macd_i)
-        print("Low prices : ")
-        Program.idk(self, low_prices_i)
-        print("Low wicks : ")
-        Program.idk(self, low_wicks_i)
-        print("Low macd : ")
-        Program.idk(self, low_macd_i)
+        if self.debug_mode:
+            print("High prices : ")
+            Program.idk(self, high_prices_i)
+            print(high_prices)
+            print("High wicks : ")
+            Program.idk(self, high_wicks_i)
+            print(high_wicks)
+            print("High macd : ")
+            print(high_macd)
+            Program.idk(self, high_macd_i)
+            print("Low prices : ")
+            Program.idk(self, low_prices_i)
+            print("Low wicks : ")
+            Program.idk(self, low_wicks_i)
+            print("Low macd : ")
+            Program.idk(self, low_macd_i)
 
         list_of_return = [high_prices, high_prices_i, high_wicks, high_wicks_i, high_macd, high_macd_i, low_prices,
                           low_prices_i, low_wicks, low_wicks_i, low_macd, low_macd_i]
@@ -566,130 +634,6 @@ class Program:
         else:
             res = "bear"
         return res
-
-    def high_low_finder(self, type_of_data, high_low):
-        high_low_prices = []
-        indexes = []
-        temp_index = 0
-
-        prices = self.data[type_of_data].tail(self.study_range).values
-        len_of_if = self.study_range
-        length_bear_indexes = Program.get_length(self)
-
-        add_bear = 0
-        add_bull = 0
-        subtract = 0
-        max_index_bull = len(self.bull_indexes) - 1
-        max_index_bear = len(self.bear_indexes) - 1
-
-        if self.first_cross == "bull" and self.longuest_macd_indexes == "bear":
-            add_bear = 1
-        elif self.first_cross == "bear" and self.longuest_macd_indexes == "bull":
-            add_bull = 1
-        if self.longuest_macd_indexes == "bull":
-            length_last_cross = len(self.bull_indexes)
-        else:
-            length_last_cross = len(self.bear_indexes)
-
-        if self.first_cross == self.longuest_macd_indexes:
-            subtract = 1
-
-        limit_low = length_last_cross - 1
-        limit_high = length_last_cross - 1
-
-        if self.longuest_macd_indexes != "none":
-            if self.longuest_macd_indexes == "bear":
-                limit_high = length_last_cross - 2
-                limit_low = length_last_cross - 1
-            else:
-                limit_high = length_last_cross - 1
-                limit_low = length_last_cross - 2
-
-        check = abs(self.bear_indexes[0] - self.bull_indexes[0])
-        j = 0
-
-        while check < len_of_if and (j < length_bear_indexes or j < length_last_cross - 1):
-            if high_low == "low":
-                temp_high_low = 1000000
-                check_add = self.bear_indexes
-            else:
-                check_add = self.bull_indexes
-                temp_high_low = 0
-
-            if j != length_last_cross - 1 and self.first_cross != "none":
-                check = abs(self.bear_indexes[j] - self.bull_indexes[j]) + check_add[j]  # Check if out of range
-            # print("The length of prices are : " + str(len(prices)))
-
-            if high_low == 'high' and j != limit_high:
-                if self.bull_indexes[j] - self.bear_indexes[j] + self.bull_indexes[j] > len(prices):
-                    length = len(prices) - self.bull_indexes[j]
-                else:
-                    length = abs(self.bear_indexes[j + add_bear] - self.bull_indexes[j])
-                for i in range(length):
-                    if float(prices[i + self.bull_indexes[j]]) > float(temp_high_low):
-                        temp_high_low = prices[i + self.bull_indexes[j]]
-                        temp_index = i + self.bull_indexes[j]
-            elif high_low == 'low' and j != limit_low:
-                if self.bear_indexes[j] - self.bull_indexes[j] + self.bear_indexes[j] > len(prices):
-                    length = len(prices) - self.bear_indexes[j]
-                else:
-                    length = abs(self.bear_indexes[j] - self.bull_indexes[j + add_bull])
-                for i in range(length):
-                    if float(prices[i + self.bear_indexes[j]]) < float(temp_high_low):  # Low
-                        temp_high_low = prices[i + self.bear_indexes[j]]
-                        temp_index = i + self.bear_indexes[j]
-
-            if j == length_last_cross - 1:
-                index = j - subtract
-                if high_low == "low":
-                    if self.bull_indexes[max_index_bull] > self.bear_indexes[max_index_bear]:
-                        length = len(prices) - self.bear_indexes[index]
-                    else:
-                        length = self.bull_indexes[max_index_bull] - self.bear_indexes[max_index_bear]
-                    for i in range(length):
-                        if float(prices[i + self.bear_indexes[index]]) > float(temp_high_low):
-                            temp_high_low = prices[i + self.bear_indexes[index]]
-                            temp_index = i + self.bear_indexes[index]
-                elif high_low == "high":  # Bug here, doesnt properly do the job.
-                    if self.bull_indexes[max_index_bull] > self.bear_indexes[max_index_bear]:
-                        length = len(prices) - self.bull_indexes[index]
-                    else:
-                        length = self.bear_indexes[max_index_bear] - self.bull_indexes[max_index_bull]
-                    for i in range(length):
-                        if float(prices[i + self.bull_indexes[index]]) > float(temp_high_low):
-                            temp_high_low = prices[i + self.bull_indexes[index]]
-                            temp_index = i + self.bull_indexes[index]
-
-            high_low_prices.append(float(temp_high_low))
-            indexes.append(int(temp_index))
-            j += 1
-
-        time_indexes = []
-
-        for i in range(len(indexes)):
-            time_indexes.append(Program.get_time(self, indexes[i]))
-
-        word = "Error"
-
-        if type_of_data == "close":
-            if high_low == "high":
-                word = "highest prices"
-            else:
-                word = "lowest prices"
-        elif type_of_data == "high":
-            word = "highest wicks"
-        elif type_of_data == "low":
-            word = "lowest wicks"
-        elif type_of_data == "Hist":
-            if high_low == "high":
-                word = "highest MACD"
-            else:
-                word = "lowest MACD"
-
-        print("The " + word + " are : ")
-        print(time_indexes)
-
-        return high_low_prices, indexes
 
     def macd_line_checker(self, index, long):
         last_macd_data = self.data['MACD'].tail(self.study_range).values
@@ -747,9 +691,9 @@ class Program:
         return length
 
     def get_time(self, index):
-        time = self.data['open_date_time']
+        time_print = self.data['open_date_time']
         index = index + self.data_range - self.study_range + 1
-        return time[index]
+        return time_print[index]
 
     def check_result(self):
         money = 100
