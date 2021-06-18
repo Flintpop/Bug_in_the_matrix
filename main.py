@@ -3,6 +3,7 @@ from binance.client import Client
 import datetime as dt
 import pandas as pd
 import time
+from Trade_initiator import quantity_calculator
 
 
 class Program:
@@ -12,20 +13,19 @@ class Program:
 
         # What to trade
         self.symbol_trade = 'BTCUSDT'
-        # Order quantity in $
-        order_dollar = 10
+
         self.infos = self.client.futures_account()
-        print(self.infos)
 
         self.current_balance = float(self.infos["totalMarginBalance"])
         self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
 
-        print(self.current_balance)
-        print(self.balance_available)
+        print("The current total funds are : " + str(self.current_balance))
+        print("The current available funds are : " + str(self.balance_available))
 
         self.interval_unit = "5T"
         self.long = False
         self.download_mode = True
+
         csv_file = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests5.csv'
         csv_file2 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests5.csv'
 
@@ -35,8 +35,10 @@ class Program:
             reader = csv.reader(file)
             self.data_range = len(list(reader)) - 2
         else:
-            self.data_range = 750  # Seems good values, ~10h of data. Min is 600 cuz ema.
-        self.study_range = self.data_range - 600
+            self.data_range = 750  # Min is 600 cuz ema.
+        self.study_range = 300
+        # Program.place_order(self, "LONG", "BUY", "")
+        # time.sleep(5)
 
         self.debug_mode = False
 
@@ -52,6 +54,8 @@ class Program:
 
         self.risk_per_trade = 21
         self.risk_per_trade = 1 - self.risk_per_trade / 100
+
+        Program.cancel_all_orders(self)
 
         if self.download_mode:
             self.data = Program.data(self)
@@ -97,8 +101,6 @@ class Program:
         self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
 
         while True:
-            if self.download_mode:
-                Program.data_init(self)
 
             print("\nEntered long scanning\n")
 
@@ -110,17 +112,17 @@ class Program:
                 if self.low_local[i] > self.low_local[i + 1] and self.low_macd[i] < self.low_macd[i + 1] and self.long:
                     res = Program.macd_line_checker(self, self.low_prices_indexes[i], self.long)
                     if self.debug_mode:
-                        Program.debug_divergence_finder(self, i)
+                        Program.debug_divergence_finder(self, self.low_prices_indexes, i, "long")
                     if res and i + 1 != len(self.low_local) - 1:
                         if i + 1 != len(self.low_local) - 1:
                             Program.trade_result_instruction(self, i)
                         else:
-                            print("Checking in 30 seconds.")
-                            # self.study_range+=1
-                            time.sleep(2)
-                            print("Checking...")
-                            self.data = Program.data(self)
-                            Program.trade_result_instruction(self, i)
+                            while self.trade_in_going:
+                                print("Checking in 30 seconds.")
+                                time.sleep(30)
+                                print("Checking...")
+                                Program.data_init(self)
+                                Program.trade_result_instruction(self, i)
 
             print("\nEntered short scanning\n")
 
@@ -129,9 +131,8 @@ class Program:
                 if not self.long:
                     self.long = Program.buy_sell(self, self.high_prices_indexes[i + 1])
 
-                print(self.high_local[i] < self.high_local[i+1])
-                print(self.high_macd[i] > self.high_macd[i + 1])
-                if self.high_local[i] < self.high_local[i + 1] and self.high_macd[i] > self.high_macd[i + 1] and not self.long:
+                if self.high_local[i] < self.high_local[i + 1] and self.high_macd[i] > self.high_macd[
+                    i + 1] and not self.long:
                     res = Program.macd_line_checker(self, self.high_prices_indexes[i], self.long)
                     if self.debug_mode:
                         Program.debug_divergence_finder(self, self.high_prices_indexes, i, "short")
@@ -141,31 +142,65 @@ class Program:
                         else:
                             Program.trade_result_instruction(self, i)
                             while self.trade_in_going:
-                                # self.study_range+=1
+                                print("Checking in 30 seconds.")
                                 time.sleep(30)
                                 print("Checking...")
-                                self.data = pd.read_csv(csv_file2)
+                                Program.data_init(self)
                                 Program.trade_result_instruction(self, i)
 
-            Program.print_result(self)
             time.sleep(300)
+            self.trade_in_going = False
+            if self.download_mode:
+                Program.data_init(self)
 
-    def win_loss_streak_calculator(self):
-        self.loss_streak = 0
-        self.win_streak = 0
-        n_win = 0
-        n_loss = 0
-        for i in range(len(self.debug_trades)):
-            if self.debug_trades[i] == 1:
-                n_win += 1
-                n_loss = 0
-                if n_win > self.win_streak:
-                    self.win_streak = n_win
-            else:
-                n_loss += 1
-                n_win = 0
-                if n_loss > self.loss_streak:
-                    self.loss_streak = n_loss
+    def place_order(self, position_side, side, quantity, leverage):
+        self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(leverage))
+        time.sleep(5)
+        self.client.futures_create_order(symbol="BTCUSDT",
+                                         positionSide=position_side,
+                                         quantity=quantity,
+                                         side=side,
+                                         type="MARKET",
+                                         )
+        time.sleep(1)
+
+    def take_profit_stop_loss(self, type_action, price_stop):
+        side = "BUY"
+        position_side = "SHORT"
+        if self.long:
+            side = "SELL"
+            position_side = "LONG"
+        self.client.futures_create_order(symbol="BTCUSDT",
+                                         closePosition="true",
+                                         type=str(type_action),
+                                         stopPrice=str(price_stop),
+                                         side=side,
+                                         positionSide=position_side
+                                         )
+        time.sleep(1)
+
+    def cancel_all_orders(self):
+        self.client.futures_cancel_all_open_orders(symbol="BTCUSDT")
+
+    def init_long(self, sl, tp, leverage, quantity):
+        Program.place_order(self,
+                            position_side="LONG",
+                            leverage=leverage,
+                            quantity=quantity,
+                            side="BUY"
+                            )
+        Program.take_profit_stop_loss(self, "STOP_MARKET", sl)
+        Program.take_profit_stop_loss(self, "TAKE_PROFIT_MARKET", tp)
+
+    def init_short(self, sl, tp, leverage, quantity):
+        Program.place_order(self,
+                            position_side="SHORT",
+                            leverage=leverage,
+                            quantity=quantity,
+                            side="SELL"
+                            )
+        Program.take_profit_stop_loss(self, "STOP_MARKET", sl)
+        Program.take_profit_stop_loss(self, "TAKE_PROFIT_MARKET", tp)
 
     def data_init(self):
         self.data = Program.data(self)
@@ -197,12 +232,8 @@ class Program:
         print("Divergence for " + word + " at : " + str(string_one) + " and " + str(string_two))
 
     def trade_result_instruction(self, i):
-        # if self.debug_mode:
-        #     Program.debug_divergence_finder(self, prices_index, i, word)
         trade, confirmation, target_hit = Program.init_trade(self, i)
         if confirmation == self.long and target_hit:
-            Program.trade_and_money_update(self, trade)
-            self.trade_count += 1
             self.trade_in_going = False
 
     def debug_trade_parameters(self, sl, tp, enter_price, enter_price_index):
@@ -211,110 +242,41 @@ class Program:
         print("The stop loss is : " + str(sl))
         print("The take profit is : " + str(tp))
 
-    def print_result(self):
-        print("\nThere was " + str(self.trade_count) + " trade possible.")
-        print("There was " + str(self.trade_won) + " trade won.")
-        print("There was " + str(self.trade_lost) + " trade lost.")
-
-        print("\nThere was " + str(self.short_won) + " short won")
-        print("There was " + str(self.short_lost) + " short lost")
-
-        print("\nThere was " + str(self.long_won) + " long won")
-        print("There was " + str(self.long_lost) + " long lost")
-
-        if self.trade_count > 0:
-            win_rate = self.trade_won / self.trade_count * 100
-
-            n_short = self.short_won + self.short_lost
-            n_long = self.long_won + self.long_lost
-            if n_short > 0:
-                n_short = self.short_won / n_short * 100
-            if n_long > 0:
-                n_long = self.long_won / n_long * 100
-
-            print_var1 = "\nIt is a " + str(win_rate) + " % win rate"
-            print_var2 = " with " + str(n_short) + " % short won" + " and " + str(n_long) + " % long won"
-            print_var1 += print_var2
-            print(print_var1)
-
-            self.money = self.money.__round__()
-            print_money = Program.more_readable_numbers(self.money)
-
-            print("\nEven with shit recognition and shit algorithm, you would end up with : " + print_money + "€")
-
-            gain = ((self.money / self.start_money) - 1) * 100
-            gain = gain.__round__()
-            gain = Program.more_readable_numbers(gain)
-            print("Which is a " + str(gain) + " % gain")
-
-            print(self.debug_trades)
-            Program.win_loss_streak_calculator(self)
-
-            print("Win streak : " + str(self.win_streak))
-            print("Loss streak : " + str(self.loss_streak))
-
     @staticmethod
     def more_readable_numbers(number):
         return format(number, ',')
-
-    def trade_and_money_update(self, trade):
-        if trade:
-            self.trade_won += 1
-            self.money = self.money * (1 + (1 - self.risk_per_trade) * self.risk_ratio)
-            self.debug_trades.append(1)
-            Program.short_long_stats_update(self, trade)
-            if self.debug_mode:
-                print("Trade won !\n")
-        else:
-            self.trade_lost += 1
-            self.money = self.money * self.risk_per_trade
-            self.debug_trades.append(0)
-            Program.short_long_stats_update(self, trade)
-            if self.debug_mode:
-                print("Trade lost !\n")
-
-    def short_long_stats_update(self, trade):
-        if self.long:
-            if trade:
-                self.long_won += 1
-            else:
-                self.long_lost += 1
-        else:
-            if trade:
-                self.short_won += 1
-            else:
-                self.short_lost += 1
-
-    @staticmethod
-    def debug_conditions(local, macd, i, word):
-        if word == "long":
-            print(
-                "Conditions are : " + str(local[i]) + " > ? " + str(local[i + 1]) + " | " + str(
-                    local[i] > local[i + 1]))
-            print("And are : " + str(macd[i]) + " < ? " + str(macd[i + 1]) + " | " + str(
-                macd[i] < macd[i + 1]) + "\n")
-        else:
-            print(
-                "Conditions are : " + str(local[i]) + " > ? " + str(local[i + 1]) + " | " + str(
-                    local[i] > local[i + 1]))
-            print("And are : " + str(macd[i]) + " < ? " + str(macd[i + 1]) + " | " + str(
-                macd[i] < macd[i + 1]) + "\n")
 
     def init_trade(self, index):
         prices = self.data['close'].tail(self.study_range).values
 
         cross_indexes = self.fake_bull_indexes
         wicks_indexes = self.low_wicks_indexes
+        confirmation = self.long
+        stop_loss = 0
+        enter_price, enter_price_index = 0, 0
+        take_profit = 0
+
         if not self.long:
             wicks_indexes = self.high_wicks_indexes
             cross_indexes = self.fake_bear_indexes
 
-        stop_loss = Program.stop_loss_calc(self, index + 1)
-        enter_price, enter_price_index = Program.enter_price_calc(cross_indexes, wicks_indexes,
-                                                                  index + 1, prices)
+        if not self.trade_in_going:
+            stop_loss = Program.stop_loss_calc(self, index + 1)
+            enter_price, enter_price_index = Program.enter_price_calc(cross_indexes, wicks_indexes,
+                                                                      index + 1, prices)
+            take_profit = Program.take_profit_calc(self, enter_price, stop_loss)
 
-        take_profit = Program.take_profit_calc(self, enter_price, stop_loss)
-        confirmation = Program.buy_sell(self, enter_price_index)
+            confirmation = Program.buy_sell(self, enter_price_index)
+
+        if not self.trade_in_going and self.long == confirmation and enter_price != 0:
+            quant, lev = quantity_calculator(self.risk_per_trade, stop_loss, enter_price, self.balance_available)
+            time.sleep(1)
+
+            if self.long:
+                Program.init_long(self, stop_loss, take_profit, lev, quant)
+            else:
+                Program.init_short(self, stop_loss, take_profit, lev, quant)
+
         trade, target_hit = Program.check_first_price_hit(self, stop_loss, take_profit, enter_price_index)
 
         if self.debug_mode and not self.trade_in_going:
@@ -342,11 +304,11 @@ class Program:
 
     def stop_loss_calc(self, index):
         if self.long:
-            buffer = self.low_wicks[index] * self.buffer
-            stop_loss = self.low_wicks[index] - buffer
+            buffer = float(self.low_wicks[index]) * self.buffer
+            stop_loss = float(self.low_wicks[index]) - buffer
         else:
-            buffer = self.high_wicks[index] * self.buffer
-            stop_loss = self.high_wicks[index] + buffer
+            buffer = float(self.high_wicks[index]) * self.buffer
+            stop_loss = float(self.high_wicks[index]) + buffer
 
         return float(stop_loss)
 
@@ -384,7 +346,7 @@ class Program:
 
             data = pd.DataFrame(
                 self.client.futures_historical_klines(symbol=self.symbol_trade, start_str=start_str,
-                                                  interval=interval_data))
+                                                      interval=interval_data))
 
             data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',
                             'taker_base_vol', 'taker_quote_vol', 'is_best_match']
@@ -680,35 +642,10 @@ class Program:
             v = max_value
         return v
 
-    # @staticmethod
-    # def macd_real_cross_detection(macd_indexes, value):
-
-    def get_length(self):  # I think its a flawed function.
-        if len(self.bear_indexes) > len(self.bull_indexes):
-            length = len(self.bull_indexes)
-        else:
-            length = len(self.bear_indexes)
-        return length
-
     def get_time(self, index):
         time_print = self.data['open_date_time']
         index = index + self.data_range - self.study_range + 1
         return time_print[index]
-
-    def check_result(self):
-        money = 100
-        cash_out = 0
-        for i in range(len(self.debug_trades)):
-            if self.debug_trades[i] == 1:
-                money = money * (1 + (1 - self.risk_per_trade) * self.risk_ratio)
-                cash_out += money * 0.005
-                money = money * 0.995
-            else:
-                money = money * self.risk_per_trade
-                money += cash_out * 0.1
-                cash_out = cash_out * 0.9
-            print("Debug money : " + money.__format__(','))
-            print("You have saved : " + cash_out.__format__(','))
 
 
 if __name__ == '__main__':
