@@ -29,4 +29,4 @@ def quantity_calculator(risk_per_trade, sl, enter_price, money_available):
     print("The leverage is : " + str(leverage))
     print("The money traded is : " + str(real_money_traded))
 
-    return quantity, leverage to m
+    return quantity, leverage
