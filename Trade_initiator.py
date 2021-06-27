@@ -1,48 +1,18 @@
 import time
 
-
-def quantity_calculator(risk_per_trade, sl, enter_price, money_available):
-    money_traded = money_available / 2
-    quantity = money_traded / enter_price
-    quantity = quantity.__round__(3)
-
-    if sl < enter_price:
-        percentage_risked_trade = (1 - sl / enter_price) * 100  # Ex : 0.5% for long
-    else:
-        percentage_risked_trade = (1 - enter_price / sl) * 100  # short
-
-    real_money_traded = quantity * enter_price
-    diviseur = money_available / real_money_traded
-    percentage_risked_trade = percentage_risked_trade / diviseur
-    leverage = ((1 - risk_per_trade) * 100) / (percentage_risked_trade / 100 * real_money_traded)
-    leverage = leverage.__round__()
-
-    print(leverage * percentage_risked_trade * 2)
-
-    if leverage * percentage_risked_trade * 2 >= 100:
-        print("High risk of liquidation !")
-    if leverage >= 125:
-        print("Leverage too high. The platform cannot handle it.")
-        leverage = 120
-    elif leverage >= 90:
-        print("Very high leverage ! Think about putting more money in the trade !")
-    elif leverage < 1:
-        leverage = 1
-
-    print("The quantity is : " + str(quantity) + " BTC")
-    print("The leverage is : " + str(leverage))
-    print("The money traded is : " + str(real_money_traded))
-
-    return quantity, leverage
+from print_and_debug import LogMaster
 
 
 class Trade:
-    def __init__(self, long, data, list_r, study_range, fake_b_indexes, index):
+    def __init__(self, long, data, list_r, study_range, fake_b_indexes, client):
 
         self.risk_ratio = 0.675
         self.risk_per_trade = 21
+        self.risk_per_trade_brut = self.risk_per_trade
         self.risk_per_trade = 1 - self.risk_per_trade / 100
+
         self.buffer = 0.001
+        self.client = client
 
         self.long = long
         self.data = data
@@ -65,10 +35,18 @@ class Trade:
             self.trade_in_going = True
             print("Trade in going !")
 
+        self.infos = self.client.futures_account()
+
+        self.current_balance = float(self.infos["totalMarginBalance"])
+        self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
+
+        self.quantity, self.leverage = Trade.quantity_calculator(self, self.balance_available)
+
     @staticmethod
     def enter_price_calc(prices):
         enter_price_index = len(prices) - 2  # Not good, should buy first then use the margin enter price to calculate
-        # the sl and tp.
+        # the sl and tp. But I have no choice bc I have to calc the quantity enter price. I gotta use both.
+        # Mb Adjust it later, it's not a top priority.
         enter_price = prices[enter_price_index]
 
         return float(enter_price), int(enter_price_index)
@@ -97,9 +75,64 @@ class Trade:
 
         return float(stop_loss)
 
+    def add_to_log_master(self, win, time_pos_open, money):
+        if win:
+            end_money = money * (1 + (self.risk_per_trade_brut / 100 * self.risk_ratio))
+            win = 1
+        else:
+            end_money = money * self.risk_per_trade
+            win = 0
+        datas = [[win, time_pos_open, money, end_money]]
+        log = LogMaster()
+        log.append_trade_history(datas)
+
+    def quantity_calculator(self, money_available):
+        money_traded = money_available / 1.5
+        quantity = money_traded / self.enter_price
+        quantity = quantity.__round__(3)
+
+        if self.stop_loss < self.enter_price:  # Determine if short or long, which change the operation
+            percentage_risked_trade = (1 - self.stop_loss / self.enter_price) * 100  # long
+        else:
+            percentage_risked_trade = (1 - self.enter_price / self.stop_loss) * 100  # short
+
+        real_money_traded = quantity * self.enter_price
+        diviseur = money_available / real_money_traded
+        percentage_risked_trade = percentage_risked_trade / diviseur
+        leverage = ((1 - self.risk_per_trade) * 100) / (percentage_risked_trade / 100 * real_money_traded)
+        leverage = leverage.__round__()
+
+        print("Maximum loss of current trade : " +
+              str(float(leverage * percentage_risked_trade * 1.5).__round__()) + " %")
+
+        leverage = Trade.adjust_leverage(leverage=leverage, risk_trade=percentage_risked_trade)
+
+        print("The quantity is : " + str(quantity) + " BTC")
+        print("The money traded is : " + str(real_money_traded))
+
+        return quantity, leverage
+
+    @staticmethod
+    def adjust_leverage(leverage, risk_trade):
+        r = leverage
+        while leverage * risk_trade * 1.5 >= 100:  # Not tested
+            print("High risk of liquidation ! Reducing leverage...")
+            r = r - ((r * 0.1).__round__())
+
+        if leverage >= 125:
+            print("Leverage too high. The platform cannot handle it.")
+            r = 120
+        elif leverage >= 90:
+            print("Very high leverage ! Think about putting more money in the trade !")
+        elif leverage < 1:
+            print("Leverage too low !")
+            r = 1
+        print("The leverage is : " + str(leverage))
+        return r
+
 
 class BinanceOrders:
-    def __init__(self, sl, enter_price, tp, risk_per_trade, client, long):
+    def __init__(self, client, long):
         self.client = client
         self.long = long
 
@@ -110,9 +143,7 @@ class BinanceOrders:
         self.current_balance = float(self.infos["totalMarginBalance"])
         self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
 
-        self.quantity, self.leverage = quantity_calculator(risk_per_trade, sl, enter_price, self.balance_available)
-
-        BinanceOrders.init_long_short(self, sl, tp)
+        self.quantity, self.leverage = 0, 0
 
     def init_long_short(self, sl, tp):
         if self.long:

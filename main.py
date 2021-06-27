@@ -1,8 +1,10 @@
-from binance.client import Client
 import datetime as dt
-import pandas as pd
 import time
-from Trade_initiator import Trade, BinanceOrders
+
+import pandas as pd
+from binance.client import Client
+
+from Trade_initiator import Trade
 
 
 class Program:
@@ -17,9 +19,9 @@ class Program:
         self.long = False
         self.download_mode = False
 
-        self.csv_file = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests6.csv'
-        self.csv_file2 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests5.csv'
-        self.csv_file3 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests7.csv'
+        self.csv_file = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests3.csv'
+        self.csv_file2 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests4.csv'
+        self.csv_file3 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests2.csv'
 
         if not self.download_mode:
             import csv
@@ -82,18 +84,17 @@ class Program:
         self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
 
         waiting_time = 150
+        self.last_high_low_trade_divergence = [0, 0]
 
         while True:
             divergence, index = Program.divergence_spotter(self)
-            if divergence:
+            not_same = Program.check_not_same_trade(self)
+            if divergence and not not_same:
                 crossed = Program.trade_final_checking(self)
                 if crossed:
-                    print(self.high_wicks)
-                    print(self.high_wicks_indexes)
-                    print(self.study_range)
-                    Program.init_trade(self, index, list_r)
+                    Program.init_trade(self, list_r)
 
-            print("Checking in 150 seconds...")
+            print("Checking in " + str(waiting_time) + " seconds...")
             time.sleep(waiting_time)
             print("Checking...")
             if self.download_mode:
@@ -117,7 +118,8 @@ class Program:
         if self.long:
             if self.low_local[length_local - 1] > self.low_local[length_local] and \
                     self.low_macd[length_macd - 1] < self.low_macd[length_macd]:
-                good_line_position = Program.macd_line_checker(self, self.low_prices_indexes[length_local - 1], self.long)
+                good_line_position = Program.macd_line_checker(self, self.low_prices_indexes[length_local - 1],
+                                                               self.long)
                 if self.debug_mode and not self.divergence_spotted:
                     Program.debug_divergence_finder(self, self.low_prices_indexes, length_local - 1, "long")
                 if good_line_position:
@@ -133,7 +135,8 @@ class Program:
         if not self.long:
             if self.high_local[length_local - 1] < self.high_local[length_local] \
                     and self.high_macd[length_macd - 1] > self.high_macd[length_macd]:
-                good_line_position = Program.macd_line_checker(self, self.high_prices_indexes[length_local - 1], self.long)
+                good_line_position = Program.macd_line_checker(self, self.high_prices_indexes[length_local - 1],
+                                                               self.long)
                 if self.debug_mode and not self.divergence_spotted:
                     Program.debug_divergence_finder(self, self.high_prices_indexes, length_local - 1, "short")
                 if not return_value:
@@ -146,7 +149,17 @@ class Program:
 
         return return_value, index
 
-    def init_trade(self, index, list_r):
+    def check_not_same_trade(self):
+        res = False  # Potentials bugs here, i dunno.
+        if self.long:
+            if self.last_high_low_trade_divergence[0] == self.high_local[len(self.high_local) - 1]:
+                res = True
+        else:
+            if self.last_high_low_trade_divergence[1] == self.low_local[len(self.low_local) - 1]:
+                res = True
+        return res
+
+    def init_trade(self, list_r):
         print("Initiating trade procedures...")
         fake_b_indexes = [self.fake_bull_indexes, self.fake_bear_indexes]
 
@@ -157,11 +170,11 @@ class Program:
             list_r=list_r,
             study_range=self.study_range,
             fake_b_indexes=fake_b_indexes,
-            index=index
+            client=self.client
         )
 
         print("Trade orders calculated.")
-        if self.debug_mode:
+        if self.debug_mode:  # I have to recalculate enter_price, or just do it before and then adjust settings.
             Program.debug_trade_parameters(
                 self=self,
                 sl=trade.stop_loss,
@@ -171,25 +184,32 @@ class Program:
             )
         print("Initiating binance procedures...")
         # orders = BinanceOrders(
-        #     sl=trade.stop_loss,
-        #     enter_price=trade.enter_price,
-        #     tp=trade.take_profit,
-        #     risk_per_trade=trade.risk_per_trade,
         #     client=self.client,
         #     long=self.long
         # )
+        # orders.quantity = trade.quantity
+        # orders.leverage = trade.leverage
+        # orders.init_long_short(trade.stop_loss, trade.take_profit)
         print("Orders placed and position open !")
+
+        time_pos_open = Program.get_time(self, trade.enter_price_index)
+
+        self.last_high_low_trade_divergence[0] = self.high_local[len(self.high_local) - 1]
+        self.last_high_low_trade_divergence[1] = self.low_local[len(self.low_local) - 1]
 
         self.trade_in_going = trade.trade_in_going
 
         while self.trade_in_going:
-            win, target_hit = Program.check_first_price_hit(self, trade.stop_loss, trade.take_profit)
+            win, target_hit = Program.check_first_price_hit(self, trade.stop_loss, trade.take_profit, trade.enter_price)
             if target_hit:
                 self.trade_in_going = False
                 print("Target hit ! Won ? | " + str(win))
 
+                real_money = trade.quantity * trade.enter_price
+
+                Trade.add_to_log_master(trade, win, time_pos_open, real_money)
+
     def data_init(self):  # Didnt test this function, be careful
-        # self.data = Program.data(self)
         self.ema_trend = Program.ema(self, 600)
         self.ema_fast = Program.ema(self, 150)
 
@@ -223,7 +243,7 @@ class Program:
         last_30_hist = self.data['Hist'].tail(5).values
         length = len(last_30_hist) - 2
         divergence, index = Program.divergence_spotter(self)
-        n_times = 0
+
         if self.long:
             while not macd_cross and divergence:  # Checks if it crossed to enter trade and if it is still a divergence.
                 last_30_hist = self.data['Hist'].tail(5).values
@@ -235,7 +255,7 @@ class Program:
                     # and checking for long or something.
                     macd_cross = True
                 print("Updating data")
-                Program.update_data(self, 5)
+                Program.update_data(self, 5, self.csv_file2)
         else:
             while not macd_cross and divergence:
                 last_30_hist = self.data['Hist'].tail(5).values
@@ -244,40 +264,22 @@ class Program:
                 if last_30_hist[length] < 0 and divergence:
                     macd_cross = True
                 print("Updating data")
-                if n_times == 0:
-                    Program.update_data(self, 1)
-                    n_times += 1
-                else:
-                    Program.update_data2(self, 1)
+                Program.update_data(self, 1, self.csv_file2)
 
         return macd_cross
 
-    def update_data(self, time_sleep):
+    def update_data(self, time_sleep, file=""):
         time.sleep(time_sleep)
         if self.download_mode:
             self.data = Program.data(self)
             Program.data_init(self)
         else:
             import csv
-            file2 = open(self.csv_file2)
+            file2 = open(file)
             reader = csv.reader(file2)
             self.data_range = len(list(reader)) - 2
             self.study_range = self.data_range - 600
-            self.data = pd.read_csv(self.csv_file2)
-            Program.data_init(self)
-
-    def update_data2(self, time_sleep):
-        time.sleep(time_sleep)
-        if self.download_mode:
-            self.data = Program.data(self)
-            Program.data_init(self)
-        else:
-            import csv
-            file = open(self.csv_file3)
-            reader = csv.reader(file)
-            self.data_range = len(list(reader)) - 2
-            self.study_range = self.data_range - 600
-            self.data = pd.read_csv(self.csv_file3)
+            self.data = pd.read_csv(file)
             Program.data_init(self)
 
     def debug_trade_parameters(self, sl, tp, enter_price, enter_price_index):
@@ -286,28 +288,31 @@ class Program:
         print("The stop loss is : " + str(sl))
         print("The take profit is : " + str(tp))
 
-    def check_first_price_hit(self, stop_loss, take_profit):
+    def check_first_price_hit(self, stop_loss, take_profit, enter_price):
         low_wicks = self.data['low'].tail(5).values
         high_wicks = self.data['high'].tail(5).values
+        prices = self.data['close'].tail(5).values
         target_hit = False
         win = False
+
         len_low = len(low_wicks) - 1
         len_high = len(high_wicks) - 1
 
-        if self.long:
-            if float(low_wicks[len_low]) < stop_loss:  # Below SL
-                target_hit = True
-                win = False
-            elif float(high_wicks[len_high]) > take_profit:  # Above TP
-                target_hit = True
-                win = True
-        else:
-            if float(high_wicks[len_high]) > stop_loss:  # Above SL
-                target_hit = True
-                win = False
-            elif float(low_wicks[len_low]) < take_profit:  # Below TP
-                target_hit = True
-                win = True
+        if prices[len_high] != enter_price and prices[len_low] != enter_price:
+            if self.long:
+                if float(low_wicks[len_low]) < stop_loss:  # Below SL
+                    target_hit = True
+                    win = False
+                elif float(high_wicks[len_high]) > take_profit:  # Above TP
+                    target_hit = True
+                    win = True
+            else:
+                if float(high_wicks[len_high]) > stop_loss:  # Above SL
+                    target_hit = True
+                    win = False
+                elif float(low_wicks[len_low]) < take_profit:  # Below TP
+                    target_hit = True
+                    win = True
 
         return win, target_hit
 
@@ -448,7 +453,7 @@ class Program:
         elif self.bear_indexes[0] < self.bull_indexes[0]:
             return "bear"
 
-    def high_low_finder_v2(self):
+    def high_low_finder_v2(self):  # Wait, mb a fundamental bug is here, with the unused fake bear and bull indexes.
         high_prices = []
         high_wicks = []
         high_macd = []
