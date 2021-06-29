@@ -1,3 +1,5 @@
+import datetime as dt
+
 import pandas as pd
 
 # datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
@@ -5,8 +7,13 @@ import pandas as pd
 
 class LogMaster:
     def __init__(self):
-        # LogMaster.init_csv()
-        self.trade_data = LogMaster.get_data()
+
+        self.init_csv()
+        try:
+            self.trade_data = self.get_data()
+        except FileNotFoundError:
+            self.init_csv()
+            self.trade_data = self.get_data()
 
     @staticmethod
     def init_csv():
@@ -14,11 +21,11 @@ class LogMaster:
         df = pd.DataFrame(columns=['win_loss', 'trade_enter_time',
                                    'money_traded', 'result_money'])
         # ['win_loss', 'trade_enter_time', 'money_traded', 'result_money']
-        df.to_csv(r'C:\Users\darwh\Documents\TradeHistory.csv', index=False)
+        df.to_csv('TradeHistory.csv', index=False)
 
     @staticmethod
     def get_data():
-        r = pd.read_csv(r"C:\Users\darwh\Documents\TradeHistory.csv")
+        r = pd.read_csv("TradeHistory.csv")
         return r
 
     def append_trade_history(self, list_of_results: list):
@@ -26,8 +33,8 @@ class LogMaster:
                                                                       'money_traded', 'result_money'])
         frames = [self.trade_data, list_of_results]
         self.trade_data = pd.concat(frames, ignore_index=True)
-        self.trade_data.to_csv(r'C:\Users\darwh\Documents\TradeHistory.csv', index=False)
-        return pd.read_csv(r"C:\Users\darwh\Documents\TradeHistory.csv")
+        self.trade_data.to_csv('TradeHistory.csv', index=False)
+        return pd.read_csv("TradeHistory.csv")
 
 
 class PrintUser:
@@ -42,7 +49,6 @@ class PrintUser:
         self.study_range = coin.study_range
 
     def debug_macd_trend_data(self, bull_indexes, bear_indexes, fake_bull, fake_bear):
-        # Printing debugging code
         bearish_time = []
         bullish_time = []
         fake_bull_time = []
@@ -93,6 +99,12 @@ class PrintUser:
         time_print = self.data['open_date_time']
         index = index + self.data_range - self.study_range + 1
         return time_print[index]
+
+    @staticmethod
+    def debug_file():
+        f = open("debug_file.txt", "w+")
+        f.write("File created at : " + str(dt.datetime.now()))
+        f.close()
 
 
 if __name__ == '__main__':

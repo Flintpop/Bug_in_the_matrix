@@ -24,20 +24,58 @@ class Data:
             start_str = str(start_min) + ' minutes ago UTC'
             interval_data = '5m'
 
-            data = pd.DataFrame(
-                self.client.futures_historical_klines(symbol=self.symbol_trade, start_str=start_str,
-                                                      interval=interval_data))
+            start = time.time()
+            data = Indicators.data_download(self, start_str, interval_data)
+            end = time.time()
+            print("The download lasted " + str(end - start) + " seconds")
 
-            data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',
-                            'taker_base_vol', 'taker_quote_vol', 'is_best_match']
-            data['open_date_time'] = [dt.datetime.fromtimestamp(x / 1000) for x in data.open_time]
-
-            data = data[['open_date_time', 'open', 'high', 'low', 'close', 'volume']]
+            print(data["open_date_time"])
 
             return data
 
+    # This function only makes me win 0.7-0.6 seconds per check... I think I will move it to V 1.5 / V 2
+    def optimized_download(self):
+        start_min = 10
+        start_str = str(start_min) + ' minutes ago UTC'
+        interval_data = '5m'
 
-class Indicators(Data):  # Mb i can put it as a child of data idk.
+        start = time.time()
+        data = Indicators.data_download(self, start_str, interval_data)
+        end = time.time()
+        print("The download lasted " + str(end-start) + " seconds")
+
+        open_compare = data["open"].tail(2).values
+        last_data_open_data = self.data["open"].tail(1).values
+
+        print(data["open_date_time"])
+        if open_compare[1] == last_data_open_data[0]:
+            print("Last download value equal download value of ")
+            pass
+        elif self.data_range >= 1500:
+            self.data = Data.download_data(self)
+        elif open_compare[0] != last_data_open_data[0]:
+            print("New value !")
+            self.study_range += 1
+            self.data_range += 1
+            data = data.head(1)
+            frames = [self.data, data]
+            self.data = pd.concat(frames, ignore_index=True)
+            self.data.drop(columns=['MACD', 'Hist', 'Signal_Line'])
+            print(self.data)
+
+    def data_download(self, start_str, interval_data):
+        data = pd.DataFrame(
+            self.client.futures_historical_klines(symbol=self.symbol_trade, start_str=start_str,
+                                                  interval=interval_data))
+
+        data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',
+                        'taker_base_vol', 'taker_quote_vol', 'is_best_match']
+        data['open_date_time'] = [dt.datetime.fromtimestamp(x / 1000) for x in data.open_time]
+        data = data[['open_date_time', 'open', 'high', 'low', 'close', 'volume']]
+        return data
+
+
+class Indicators(Data):
     def __init__(self, client):
         super().__init__(client)
         self.algorithms = Detector()
@@ -131,7 +169,7 @@ class Indicators(Data):  # Mb i can put it as a child of data idk.
 
     def high_low_finder_v2(self):
         # Wait, mb a fundamental bug is here, with the unused fake bear and bull indexes.
-        # I could reduce the number of lines here of about 50% maybe;
+        # TODO: Reduce the number of lines in high_low_finder_v2;
         high_prices = []
         high_wicks = []
         high_macd = []
@@ -188,23 +226,6 @@ class Indicators(Data):  # Mb i can put it as a child of data idk.
 
             j += 1
 
-        # if self.debug_mode:
-        #     print("High prices : ")
-        #     Program.idk(self, high_prices_i)
-        #     print(high_prices)
-        #     print("High wicks : ")
-        #     Program.idk(self, high_wicks_i)
-        #     print(high_wicks)
-        #     print("High macd : ")
-        #     print(high_macd)
-        #     Program.idk(self, high_macd_i)
-        #     print("Low prices : ")
-        #     Program.idk(self, low_prices_i)
-        #     print("Low wicks : ")
-        #     Program.idk(self, low_wicks_i)
-        #     print("Low macd : ")
-        #     Program.idk(self, low_macd_i)
-
         list_of_return = [high_prices, high_prices_i, high_wicks, high_wicks_i, high_macd, high_macd_i, low_prices,
                           low_prices_i, low_wicks, low_wicks_i, low_macd, low_macd_i]
         return list_of_return
@@ -239,7 +260,7 @@ class Indicators(Data):  # Mb i can put it as a child of data idk.
 
         return res
 
-    def data_init(self):  # Didnt test this function, be careful
+    def data_init(self):
         self.ema_trend = self.ema(600)
         self.ema_fast = self.ema(150)
 
@@ -258,7 +279,11 @@ class Indicators(Data):  # Mb i can put it as a child of data idk.
         self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
         self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
 
-    def update_data(self, time_sleep):
-        time.sleep(time_sleep)
+    def update_data(self):
         self.data = Data.download_data(self)
+        start = time.time()
         self.data_init()
+        end = time.time()
+        print("The indicators test lasted " + str(end - start) + " seconds")
+
+

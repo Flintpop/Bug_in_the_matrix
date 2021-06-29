@@ -1,7 +1,5 @@
 import time
 
-from print_and_debug import LogMaster
-
 
 class Trade:
     def __init__(self, long, data, list_r, study_range, fake_b_indexes, client):
@@ -75,7 +73,7 @@ class Trade:
 
         return float(stop_loss)
 
-    def add_to_log_master(self, win, time_pos_open, money):
+    def add_to_log_master(self, win, time_pos_open, money, debug):
         if win:
             end_money = money * (1 + (self.risk_per_trade_brut / 100 * self.risk_ratio))
             win = 1
@@ -83,8 +81,7 @@ class Trade:
             end_money = money * self.risk_per_trade
             win = 0
         datas = [[win, time_pos_open, money, end_money]]
-        log = LogMaster()
-        log.append_trade_history(datas)
+        debug.append_trade_history(datas)
 
     def quantity_calculator(self, money_available):
         money_traded = money_available / 1.5

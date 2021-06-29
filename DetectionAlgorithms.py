@@ -1,5 +1,7 @@
 
 class Detector:
+    # TODO: Finders to refactor, I could do just one function instead of two and I could mb separate them
+    #  in more functions
     @staticmethod
     def finder_high(index, first_indexes, second_indexes, prices):
         temp_high_low = 0

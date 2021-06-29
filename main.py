@@ -4,19 +4,22 @@ import pandas as pd
 from binance.client import Client
 
 from Trade_initiator import Trade
-from print_and_debug import PrintUser
+from print_and_debug import PrintUser, LogMaster
 from data import Indicators
+from security import GetData
 
 
 class Program:
     def __init__(self):
-        self.client = Client("hn2OOw1SdmnFBf3SYRNa4sruUBj8LFAbUFcYYVLYxEkXdRP48EUb8NutLI2gKRRb",
-                             "pkwUZomAYay2rC8I1QjPMbE55wv4zeKinwb5GCu5x0EtF3BOnbIj5E5o7MRO9kmT")
+        key = self.login()
 
-        # What to trade
+        self.client = Client(key[0], key[1])
+
+        key = ""
+        print(key)
 
         self.long = False
-        self.download_mode = False
+        self.download_mode = True
 
         self.csv_file = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests3.csv'
         self.csv_file2 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests4.csv'
@@ -31,6 +34,9 @@ class Program:
 
         self.coin = Indicators(self.client)
         self.debug = PrintUser(self.coin)
+
+        self.log_master = LogMaster()
+
         if self.download_mode:
             self.data = self.coin.data
             # self.data.to_csv(r'C:\Users\darwh\Documents\btc_chart_excel_short_tests2.csv')
@@ -42,8 +48,11 @@ class Program:
 
         list_r = self.coin.list_r
 
-        waiting_time = 150
         self.last_high_low_trade_divergence = [0, 0]
+
+        Program.print_self_coin_informations(self)
+
+        waiting_time = 220
 
         while True:
             divergence, index = Program.divergence_spotter(self)
@@ -53,12 +62,25 @@ class Program:
                 if crossed:
                     Program.init_trade(self, list_r)
 
-            print("Checking in " + str(waiting_time) + " seconds...")
-            time.sleep(waiting_time)
-            print("Checking...")
             if self.download_mode:
-                self.data = self.coin.data()
-                self.coin.data_init()
+                print("Checking in " + str(waiting_time) + " seconds...")
+                time.sleep(waiting_time)
+                print("Checking...")
+                self.debug.debug_file()
+                start = time.time()
+                self.coin.update_data()
+                self.data = self.coin.data
+                Program.print_self_coin_informations(self)
+
+                print("The total check lasted " + str(time.time() - start) + " seconds")
+
+    @staticmethod
+    def login():
+        keys = GetData()
+        key_user = input("Please enter the decryption key : ")
+        key = keys.get_data("14c7aeY7iN9FhjCUbsOmGo7R1_9sJAcjaDJQkyKjMTA=")  # Be sure to delete it when release.
+        print("Input deleted" + key_user + "!")
+        return key
 
     def short_long_check(self, length_local, low_high_prices):
         self.long = Program.buy_sell(self, low_high_prices[length_local - 1])
@@ -108,6 +130,27 @@ class Program:
 
         return return_value, index
 
+    def print_self_coin_informations(self):
+        self.debug.actualize_data(self.coin)
+        # sentence = "{} {} : "
+        # print_info = [["High", "Low"], ["prices", "wicks", "macd"]]
+        #
+        # for j in range(2):
+        #     for i in range(3):
+        #         print(sentence.format(print_info[j][i]))
+        print("High prices : ")
+        self.debug.idk(self.coin.high_prices_indexes)
+        print("High wicks : ")
+        self.debug.idk(self.coin.high_wicks_indexes)
+        print("High macd : ")
+        self.debug.idk(self.coin.high_macd_indexes)
+        print("Low prices : ")
+        self.debug.idk(self.coin.low_prices_indexes)
+        print("Low wicks : ")
+        self.debug.idk(self.coin.low_wicks_indexes)
+        print("Low macd : ")
+        self.debug.idk(self.coin.low_macd_indexes)
+
     def check_not_same_trade(self):
         res = False  # Potentials bugs here, i dunno.
         if self.long:
@@ -151,22 +194,22 @@ class Program:
         # orders.init_long_short(trade.stop_loss, trade.take_profit)
         print("Orders placed and position open !")
 
-        time_pos_open = self.debug.get_time(trade.enter_price_index)
-
         self.last_high_low_trade_divergence[0] = self.coin.high_local[len(self.coin.high_local) - 1]
         self.last_high_low_trade_divergence[1] = self.coin.low_local[len(self.coin.low_local) - 1]
 
-        self.trade_in_going = trade.trade_in_going
-
-        while self.trade_in_going:
+        while trade.trade_in_going:
             win, target_hit = Program.check_first_price_hit(self, trade.stop_loss, trade.take_profit, trade.enter_price)
             if target_hit:
-                self.trade_in_going = False
+                trade.trade_in_going = False
                 print("Target hit ! Won ? | " + str(win))
 
                 real_money = trade.quantity * trade.enter_price
 
-                Trade.add_to_log_master(trade, win, time_pos_open, real_money)
+                time_pos_open = self.debug.get_time(trade.enter_price_index)
+                Trade.add_to_log_master(trade, win, time_pos_open, real_money, self.log_master)
+            self.coin.update_data()
+            self.data = self.coin.data
+            self.debug.actualize_data(self.coin)
 
     def trade_final_checking(self):
         print("Final checking procedures, awaiting a macd cross !")
@@ -186,8 +229,10 @@ class Program:
                     # and checking for long or something.
                     macd_cross = True
                 print("Updating data")
-                self.coin.update_data(5)
+                time.sleep(5)
+                self.coin.update_data()
                 self.debug.actualize_data(self.coin)
+
         else:
             while not macd_cross and divergence:
                 last_30_hist = self.data['Hist'].tail(5).values
@@ -196,7 +241,8 @@ class Program:
                 if last_30_hist[length] < 0 and divergence:
                     macd_cross = True
                 print("Updating data")
-                self.coin.update_data(5)
+                time.sleep(5)
+                self.coin.update_data()
                 self.debug.actualize_data(self.coin)
 
         return macd_cross
