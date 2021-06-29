@@ -29,8 +29,6 @@ class Data:
             end = time.time()
             print("The download lasted " + str(end - start) + " seconds")
 
-            print(data["open_date_time"])
-
             return data
 
     # This function only makes me win 0.7-0.6 seconds per check... I think I will move it to V 1.5 / V 2
@@ -279,11 +277,9 @@ class Indicators(Data):
         self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
         self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
 
-    def update_data(self):
+    def update_data(self, logs):
         self.data = Data.download_data(self)
         start = time.time()
         self.data_init()
         end = time.time()
-        print("The indicators test lasted " + str(end - start) + " seconds")
-
-
+        logs.add_log("\n\nThe indicators test lasted " + str(end - start) + " seconds")

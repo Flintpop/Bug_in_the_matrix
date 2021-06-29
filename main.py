@@ -1,47 +1,50 @@
 import time
 
-import pandas as pd
+import datetime as dt
 from binance.client import Client
 
-from Trade_initiator import Trade
+from Trade_initiator import Trade, BinanceOrders
 from print_and_debug import PrintUser, LogMaster
 from data import Indicators
 from security import GetData
 
+#####################################################################################
+"""
+Version : 0.9b
+Date : 29 / 06 / 2021
+"""
+#####################################################################################
 
 class Program:
     def __init__(self):
         key = self.login()
-
-        self.client = Client(key[0], key[1])
-
+        successful_login = False
+        while not successful_login:
+            try:
+                self.client = Client(key[0], key[1])
+                successful_login = True
+            except Exception as e:
+                print(e)
+                print("Please try again.")
         key = ""
         print(key)
 
         self.long = False
         self.download_mode = True
 
-        self.csv_file = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests3.csv'
-        self.csv_file2 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests4.csv'
-        self.csv_file3 = r'C:\Users\darwh\Documents\btc_chart_excel_short_tests2.csv'
-
         self.debug_mode = True
 
         self.list_risk_ratio = [2, 4, 6, 7, 8, 9, 10]
         self.buffer = 0.001
-        self.ema_buffer = 0.004  # Only looked to lower win rate, not activated
-        self.macd_hist_buffer = 0.5  # This one need testing. Not activated
+        # self.ema_buffer = 0.004  # Only looked to lower win rate, not activated
+        # self.macd_hist_buffer = 0.5  # This one need testing. Not activated
 
         self.coin = Indicators(self.client)
         self.debug = PrintUser(self.coin)
 
         self.log_master = LogMaster()
 
-        if self.download_mode:
-            self.data = self.coin.data
-            # self.data.to_csv(r'C:\Users\darwh\Documents\btc_chart_excel_short_tests2.csv')
-        else:
-            self.data = pd.read_csv(self.csv_file)
+        self.data = self.coin.data
 
         self.trade_in_going = False
         self.divergence_spotted = False
@@ -63,23 +66,23 @@ class Program:
                     Program.init_trade(self, list_r)
 
             if self.download_mode:
-                print("Checking in " + str(waiting_time) + " seconds...")
+                self.debug.logs.add_log("\n\n" + str(dt.datetime.now()) + ": Checking in " + str(waiting_time) +
+                                        " seconds...")
                 time.sleep(waiting_time)
-                print("Checking...")
+                self.debug.logs.add_log("\n\nChecking...")
                 self.debug.debug_file()
                 start = time.time()
-                self.coin.update_data()
+                self.coin.update_data(self.debug.logs)
                 self.data = self.coin.data
                 Program.print_self_coin_informations(self)
 
-                print("The total check lasted " + str(time.time() - start) + " seconds")
+                self.debug.logs.add_log("\n\nThe total check lasted " + str(time.time() - start) + " seconds")
 
     @staticmethod
     def login():
         keys = GetData()
-        key_user = input("Please enter the decryption key : ")
-        key = keys.get_data("14c7aeY7iN9FhjCUbsOmGo7R1_9sJAcjaDJQkyKjMTA=")  # Be sure to delete it when release.
-        print("Input deleted" + key_user + "!")
+        key_input = input("Please enter the decryption key : ")
+        key = keys.get_data(key_input)
         return key
 
     def short_long_check(self, length_local, low_high_prices):
@@ -126,30 +129,27 @@ class Program:
                         self.divergence_spotted = True
                         index = self.coin.high_wicks_indexes[len(self.coin.high_wicks_indexes) - 1]
                 else:
-                    raise print("Error, return value True in long but algorithm think it is short too.")
+                    raise self.debug.logs.add_log("\n\nError, return value True in long but algorithm think it is "
+                                                  "short too.")
 
         return return_value, index
 
     def print_self_coin_informations(self):
         self.debug.actualize_data(self.coin)
-        # sentence = "{} {} : "
-        # print_info = [["High", "Low"], ["prices", "wicks", "macd"]]
-        #
-        # for j in range(2):
-        #     for i in range(3):
-        #         print(sentence.format(print_info[j][i]))
-        print("High prices : ")
-        self.debug.idk(self.coin.high_prices_indexes)
-        print("High wicks : ")
-        self.debug.idk(self.coin.high_wicks_indexes)
-        print("High macd : ")
-        self.debug.idk(self.coin.high_macd_indexes)
-        print("Low prices : ")
-        self.debug.idk(self.coin.low_prices_indexes)
-        print("Low wicks : ")
-        self.debug.idk(self.coin.low_wicks_indexes)
-        print("Low macd : ")
-        self.debug.idk(self.coin.low_macd_indexes)
+        d = self.debug
+
+        d.logs.add_log("\n\nHigh prices : ")
+        d.logs.add_log("\n" + d.idk(self.coin.high_prices_indexes))
+        d.logs.add_log("\nHigh wicks : ")
+        d.logs.add_log("\n" + d.idk(self.coin.high_wicks_indexes))
+        d.logs.add_log("\nHigh macd : ")
+        d.logs.add_log("\n" + d.idk(self.coin.high_macd_indexes))
+        d.logs.add_log("\nLow prices : ")
+        d.logs.add_log("\n" + d.idk(self.coin.low_prices_indexes))
+        d.logs.add_log("\nLow wicks : ")
+        d.logs.add_log("\n" + d.idk(self.coin.low_wicks_indexes))
+        d.logs.add_log("\nLow macd : ")
+        d.logs.add_log("\n" + d.idk(self.coin.low_macd_indexes))
 
     def check_not_same_trade(self):
         res = False  # Potentials bugs here, i dunno.
@@ -162,11 +162,11 @@ class Program:
         return res
 
     def init_trade(self, list_r):
-        print("Initiating trade procedures...")
+        log = self.debug.logs.add_log
+        log("\n\n\nInitiating trade procedures...")
         fake_b_indexes = [self.coin.fake_bull_indexes, self.coin.fake_bear_indexes]
 
-        print("Calculating stop_loss, take profit...")
-        trade = Trade(
+        binance = BinanceOrders(
             long=self.long,
             data=self.data,
             list_r=list_r,
@@ -174,45 +174,45 @@ class Program:
             fake_b_indexes=fake_b_indexes,
             client=self.client
         )
+        log("\nCalculating stop_loss, take profit...")
+        binance.init_calculations()
+        log("\nTrade orders calculated.")
 
-        print("Trade orders calculated.")
-        if self.debug_mode:  # I have to recalculate enter_price, or just do it before and then adjust settings.
-            PrintUser.debug_trade_parameters(
-                self=self.debug,
-                sl=trade.stop_loss,
-                tp=trade.take_profit,
-                enter_price=trade.enter_price,
-                enter_price_index=trade.enter_price_index
-            )
-        print("Initiating binance procedures...")
-        # orders = BinanceOrders(
-        #     client=self.client,
-        #     long=self.long
-        # )
-        # orders.quantity = trade.quantity
-        # orders.leverage = trade.leverage
-        # orders.init_long_short(trade.stop_loss, trade.take_profit)
-        print("Orders placed and position open !")
+        log("\nInitiating binance procedures...")
+        # binance.init_long_short()
+        # binance.place_sl_and_tp()
+        log("\nOrders placed and position open !")
+        PrintUser.debug_trade_parameters(
+            self=self.debug,
+            long=self.long,
+            sl=binance.stop_loss,
+            tp=binance.take_profit,
+            entry_price=binance.entry_price,
+            enter_price_index=binance.enter_price_index
+        )
 
         self.last_high_low_trade_divergence[0] = self.coin.high_local[len(self.coin.high_local) - 1]
         self.last_high_low_trade_divergence[1] = self.coin.low_local[len(self.coin.low_local) - 1]
 
-        while trade.trade_in_going:
-            win, target_hit = Program.check_first_price_hit(self, trade.stop_loss, trade.take_profit, trade.enter_price)
+        while binance.trade_in_going:
+            win, target_hit = Program.check_first_price_hit(self, binance.stop_loss, binance.take_profit,
+                                                            binance.entry_price)
             if target_hit:
-                trade.trade_in_going = False
-                print("Target hit ! Won ? | " + str(win))
+                binance.trade_in_going = False
+                log("\n\n\nTarget hit ! Won ? | " + str(win))
 
-                real_money = trade.quantity * trade.enter_price
+                real_money = binance.quantity * binance.entry_price
 
-                time_pos_open = self.debug.get_time(trade.enter_price_index)
-                Trade.add_to_log_master(trade, win, time_pos_open, real_money, self.log_master)
-            self.coin.update_data()
+                time_pos_open = self.debug.get_time(binance.enter_price_index)
+                Trade.add_to_log_master(binance, win, time_pos_open, real_money, self.log_master)
+            time.sleep(220)
+            self.coin.update_data(self.debug.logs)
             self.data = self.coin.data
             self.debug.actualize_data(self.coin)
 
     def trade_final_checking(self):
-        print("Final checking procedures, awaiting a macd cross !")
+        log = self.debug.logs.add_log
+        log("\n\nFinal checking procedures, awaiting a macd cross !")
         macd_cross = False
         last_30_hist = self.data['Hist'].tail(5).values
         length = len(last_30_hist) - 2
@@ -221,28 +221,28 @@ class Program:
         if self.long:
             while not macd_cross and divergence:  # Checks if it crossed to enter trade and if it is still a divergence.
                 last_30_hist = self.data['Hist'].tail(5).values
-                print("Checking long...")
+                log("\n\nChecking long...")
                 divergence, index = Program.divergence_spotter(self)
-                print(last_30_hist[length] > 0)
-                print(divergence)
+                log(last_30_hist[length] > 0)
+                log(divergence)
                 if last_30_hist[length] > 0 and divergence:  # Potential bug with divergence for short
                     # and checking for long or something.
                     macd_cross = True
-                print("Updating data")
+                log("\nUpdating data")
                 time.sleep(5)
-                self.coin.update_data()
+                self.coin.update_data(self.debug.logs)
                 self.debug.actualize_data(self.coin)
 
         else:
             while not macd_cross and divergence:
                 last_30_hist = self.data['Hist'].tail(5).values
-                print("Checking short...")
+                log("\n\nChecking short...")
                 divergence, index = Program.divergence_spotter(self)
                 if last_30_hist[length] < 0 and divergence:
                     macd_cross = True
-                print("Updating data")
+                log("\nUpdating data")
                 time.sleep(5)
-                self.coin.update_data()
+                self.coin.update_data(self.debug.logs)
                 self.debug.actualize_data(self.coin)
 
         return macd_cross

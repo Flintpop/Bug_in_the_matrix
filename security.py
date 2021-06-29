@@ -56,7 +56,3 @@ class GetData:
             decrypted.append(temp)
         f.close()
         return decrypted
-
-
-if __name__ == '__main__':
-    a = GetData()

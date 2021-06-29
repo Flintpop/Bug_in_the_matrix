@@ -7,16 +7,14 @@ import pandas as pd
 
 class LogMaster:
     def __init__(self):
-
-        self.init_csv()
         try:
             self.trade_data = self.get_data()
         except FileNotFoundError:
-            self.init_csv()
+            self.init_trade_history()
             self.trade_data = self.get_data()
 
     @staticmethod
-    def init_csv():
+    def init_trade_history():
         # df = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]]
         df = pd.DataFrame(columns=['win_loss', 'trade_enter_time',
                                    'money_traded', 'result_money'])
@@ -24,11 +22,29 @@ class LogMaster:
         df.to_csv('TradeHistory.csv', index=False)
 
     @staticmethod
+    def init_log():
+        f = open("logs.txt", "w+")
+        f.write("File created at : " + str(dt.datetime.now()) + "\n\n")
+        f.close()
+        f = open("logs.txt", "a")
+        f.write("Logs initialized.\n")
+        f.close()
+
+    @staticmethod
+    def add_log(words):
+        word_print = words.replace("\n", "")
+        print(word_print)
+        f = open("logs.txt", "a")
+        f.write(str(words))
+        f.close()
+
+    @staticmethod
     def get_data():
         r = pd.read_csv("TradeHistory.csv")
         return r
 
     def append_trade_history(self, list_of_results: list):
+        self.trade_data = self.get_data()
         list_of_results = pd.DataFrame(data=list_of_results, columns=['win_loss', 'trade_enter_time',
                                                                       'money_traded', 'result_money'])
         frames = [self.trade_data, list_of_results]
@@ -42,6 +58,8 @@ class PrintUser:
         self.data = coin_obj.data
         self.data_range = coin_obj.data_range
         self.study_range = coin_obj.study_range
+        
+        self.logs = LogMaster()
 
     def actualize_data(self, coin):
         self.data = coin.data
@@ -81,19 +99,27 @@ class PrintUser:
         for i in range(len(indexes)):
             date = PrintUser.get_time(self, indexes[i])
             time_debug.append(date)
-        print(time_debug)
+        return str(time_debug)
 
     def debug_divergence_finder(self, indexes, i, word):
         string_one = PrintUser.get_time(self, indexes[i])
         string_two = PrintUser.get_time(self, indexes[i + 1])
+        
+        string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
+        print(string)
+        self.logs.add_log(string)
 
-        print("Divergence for " + word + " at : " + str(string_one) + " and " + str(string_two))
-
-    def debug_trade_parameters(self, sl, tp, enter_price, enter_price_index):
+    def debug_trade_parameters(self, sl, tp, entry_price, enter_price_index, long):
         date = PrintUser.get_time(self, enter_price_index)
-        print("The enter price is : " + str(enter_price) + " at : " + str(date))
+
+        string = "\n\nIt is a long ? | " + str(long) + "\n" + "The enter price is : " + str(entry_price) + " at : " + \
+                 str(date) + "\n" + "The stop loss is : " + str(sl) + "\n" + "The take profit is : " + str(tp)
+        print("It is a long ? | " + str(long))
+        print("The enter price is : " + str(entry_price) + " at : " + str(date))
         print("The stop loss is : " + str(sl))
         print("The take profit is : " + str(tp))
+
+        self.logs.add_log(string)
 
     def get_time(self, index):
         time_print = self.data['open_date_time']
@@ -105,7 +131,3 @@ class PrintUser:
         f = open("debug_file.txt", "w+")
         f.write("File created at : " + str(dt.datetime.now()))
         f.close()
-
-
-if __name__ == '__main__':
-    oui = LogMaster()
