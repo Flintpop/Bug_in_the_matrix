@@ -11,14 +11,12 @@ class LogMaster:
             self.trade_data = self.get_data()
         except FileNotFoundError:
             self.init_trade_history()
+            print("Log file initialized")
             self.trade_data = self.get_data()
 
     @staticmethod
     def init_trade_history():
-        # df = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]]
-        df = pd.DataFrame(columns=['win_loss', 'trade_enter_time',
-                                   'money_traded', 'result_money'])
-        # ['win_loss', 'trade_enter_time', 'money_traded', 'result_money']
+        df = pd.DataFrame(columns=['win_loss', 'trade_enter_time', 'money_traded', 'result_money'])
         df.to_csv('TradeHistory.csv', index=False)
 
     @staticmethod
@@ -32,11 +30,25 @@ class LogMaster:
 
     @staticmethod
     def add_log(words):
-        word_print = words.replace("\n", "")
-        print(word_print)
-        f = open("logs.txt", "a")
-        f.write(str(words))
-        f.close()
+        try:
+            if type(words) == str:
+                word_print = words.replace("\n", "")
+                word = words
+            elif type(words) == bool:
+                word_print = words
+                word = "\n\n" + str(words)
+            else:
+                word_print = words
+                word = words
+            print(word_print)
+            f = open("logs.txt", "a")
+            f.write(str(word))
+            f.close()
+        except Exception as e:
+            print(e)
+            f = open("logs.txt", "a")
+            f.write("\n\n" + str(e))
+            f.close()
 
     @staticmethod
     def get_data():
@@ -131,3 +143,8 @@ class PrintUser:
         f = open("debug_file.txt", "w+")
         f.write("File created at : " + str(dt.datetime.now()))
         f.close()
+
+
+if __name__ == '__main__':
+    a = LogMaster()
+    a.add_log(0 > 1)

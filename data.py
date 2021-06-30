@@ -277,9 +277,6 @@ class Indicators(Data):
         self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
         self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
 
-    def update_data(self, logs):
+    def update_data(self):
         self.data = Data.download_data(self)
-        start = time.time()
         self.data_init()
-        end = time.time()
-        logs.add_log("\n\nThe indicators test lasted " + str(end - start) + " seconds")

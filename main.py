@@ -10,10 +10,11 @@ from security import GetData
 
 #####################################################################################
 """
-Version : 0.9b
-Date : 29 / 06 / 2021
+Version : 0.9.1b
+Date : 30 / 06 / 2021
 """
 #####################################################################################
+
 
 class Program:
     def __init__(self):
@@ -69,20 +70,19 @@ class Program:
                 self.debug.logs.add_log("\n\n" + str(dt.datetime.now()) + ": Checking in " + str(waiting_time) +
                                         " seconds...")
                 time.sleep(waiting_time)
-                self.debug.logs.add_log("\n\nChecking...")
                 self.debug.debug_file()
                 start = time.time()
-                self.coin.update_data(self.debug.logs)
+                self.coin.update_data()
                 self.data = self.coin.data
                 Program.print_self_coin_informations(self)
-
                 self.debug.logs.add_log("\n\nThe total check lasted " + str(time.time() - start) + " seconds")
 
     @staticmethod
     def login():
         keys = GetData()
-        key_input = input("Please enter the decryption key : ")
-        key = keys.get_data(key_input)
+        from getpass import getpass
+        password = getpass()
+        key = keys.get_data(password)
         return key
 
     def short_long_check(self, length_local, low_high_prices):
@@ -140,16 +140,16 @@ class Program:
 
         d.logs.add_log("\n\nHigh prices : ")
         d.logs.add_log("\n" + d.idk(self.coin.high_prices_indexes))
-        d.logs.add_log("\nHigh wicks : ")
-        d.logs.add_log("\n" + d.idk(self.coin.high_wicks_indexes))
-        d.logs.add_log("\nHigh macd : ")
-        d.logs.add_log("\n" + d.idk(self.coin.high_macd_indexes))
-        d.logs.add_log("\nLow prices : ")
-        d.logs.add_log("\n" + d.idk(self.coin.low_prices_indexes))
-        d.logs.add_log("\nLow wicks : ")
-        d.logs.add_log("\n" + d.idk(self.coin.low_wicks_indexes))
-        d.logs.add_log("\nLow macd : ")
-        d.logs.add_log("\n" + d.idk(self.coin.low_macd_indexes))
+        # d.logs.add_log("\nHigh wicks : ")
+        # d.logs.add_log("\n" + d.idk(self.coin.high_wicks_indexes))
+        # d.logs.add_log("\nHigh macd : ")
+        # d.logs.add_log("\n" + d.idk(self.coin.high_macd_indexes))
+        # d.logs.add_log("\nLow prices : ")
+        # d.logs.add_log("\n" + d.idk(self.coin.low_prices_indexes))
+        # d.logs.add_log("\nLow wicks : ")
+        # d.logs.add_log("\n" + d.idk(self.coin.low_wicks_indexes))
+        # d.logs.add_log("\nLow macd : ")
+        # d.logs.add_log("\n" + d.idk(self.coin.low_macd_indexes))
 
     def check_not_same_trade(self):
         res = False  # Potentials bugs here, i dunno.
@@ -206,7 +206,7 @@ class Program:
                 time_pos_open = self.debug.get_time(binance.enter_price_index)
                 Trade.add_to_log_master(binance, win, time_pos_open, real_money, self.log_master)
             time.sleep(220)
-            self.coin.update_data(self.debug.logs)
+            self.coin.update_data()
             self.data = self.coin.data
             self.debug.actualize_data(self.coin)
 
@@ -230,7 +230,7 @@ class Program:
                     macd_cross = True
                 log("\nUpdating data")
                 time.sleep(5)
-                self.coin.update_data(self.debug.logs)
+                self.coin.update_data()
                 self.debug.actualize_data(self.coin)
 
         else:
@@ -242,7 +242,7 @@ class Program:
                     macd_cross = True
                 log("\nUpdating data")
                 time.sleep(5)
-                self.coin.update_data(self.debug.logs)
+                self.coin.update_data()
                 self.debug.actualize_data(self.coin)
 
         return macd_cross
