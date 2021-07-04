@@ -1,0 +1,19 @@
+File created at : 2021-06-29 14:19:29.096760
+
+Logs initialized.
+
+2021-07-04 12:20:37.665491: Checking in 265 seconds...
+
+2021-07-04 12:27:32.043136: Checking in 265 seconds...
+
+2021-07-04 12:34:37.739359: Checking in 265 seconds...
+
+2021-07-04 12:40:20.092452: Checking in 265 seconds...
+
+2021-07-04 14:52:38.932921: Checking in 265 seconds...
+
+Divergence for long at : 2021-07-04 11:10:00 and 2021-07-04 14:50:00
+
+Final checking procedures, awaiting a macd cross !
+
+Checking long...

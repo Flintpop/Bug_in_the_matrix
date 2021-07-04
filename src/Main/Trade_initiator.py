@@ -1,4 +1,3 @@
-import time
 from binance.client import Client
 
 
@@ -30,7 +29,7 @@ class Trade:
         self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
 
         self.stop_loss = 0
-        self.entry_price, self.enter_price_index = 0, 0
+        self.entry_price, self.entry_price_index = 0, 0
         self.take_profit = 0
 
         self.quantity, self.leverage = 0, 0
@@ -38,7 +37,7 @@ class Trade:
     def init_calculations(self):
         if not self.trade_in_going:
             self.stop_loss = Trade.stop_loss_calc(self)
-            self.entry_price, self.enter_price_index = self.enter_price_calc()
+            self.entry_price, self.entry_price_index = self.entry_price_calc()
             self.take_profit = Trade.take_profit_calc(self, self.entry_price, self.stop_loss)
 
             self.trade_in_going = True
@@ -49,7 +48,7 @@ class Trade:
 
             self.quantity, self.leverage = Trade.quantity_calculator(self, self.balance_available)
 
-    def enter_price_calc(self):
+    def entry_price_calc(self):
         prices = self.data['close'].tail(self.study_range).values
         enter_price_index = len(prices) - 2
         enter_price = prices[enter_price_index]
@@ -61,33 +60,34 @@ class Trade:
             take_profit = enter_price + (enter_price - stop_loss) * self.risk_ratio
         else:
             take_profit = enter_price - (stop_loss - enter_price) * self.risk_ratio
+        take_profit.__round__()
 
-        return take_profit
+        return int(take_profit)
 
     def stop_loss_calc(self):
         low_l = len(self.low_wicks) - 1
         high_l = len(self.high_wicks) - 1
-        if self.low_wicks_indexes[low_l] == self.study_range - 1:
-            low_l -= 1
-        if self.high_wicks_indexes[high_l] == self.study_range - 1:
-            high_l -= 1
+        # if self.low_wicks_indexes[low_l] == self.study_range - 1:
+        #     low_l -= 1
+        # if self.high_wicks_indexes[high_l] == self.study_range - 1:
+        #     high_l -= 1
         if self.long:
             buffer = float(self.low_wicks[low_l]) * self.buffer
             stop_loss = float(self.low_wicks[low_l]) - buffer
         else:
             buffer = float(self.high_wicks[high_l]) * self.buffer
             stop_loss = float(self.high_wicks[high_l]) + buffer
+        stop_loss.__round__()
+        return int(stop_loss)
 
-        return float(stop_loss)
-
-    def add_to_log_master(self, win, time_pos_open, money, debug):
+    def add_to_trade_history(self, win, time_pos_open, time_pos_hit, money, debug):
         if win:
             end_money = money * (1 + (self.risk_per_trade_brut / 100 * self.risk_ratio))
             win = 1
         else:
             end_money = money * self.risk_per_trade
             win = 0
-        datas = [[win, time_pos_open, money, end_money]]
+        datas = [[win, time_pos_open, time_pos_hit, money, end_money]]
         debug.append_trade_history(datas)
 
     def quantity_calculator(self, money_available):
@@ -95,31 +95,45 @@ class Trade:
         quantity = money_traded / self.entry_price
         quantity = quantity.__round__(3)
 
-        if self.stop_loss < self.entry_price:  # Determine if short or long, which change the operation
-            percentage_risked_trade = (1 - self.stop_loss / self.entry_price) * 100  # long
-        else:
-            percentage_risked_trade = (1 - self.entry_price / self.stop_loss) * 100  # short
+        percentage_risked_trade = self.percentage_risk_calculation()
 
         real_money_traded = quantity * self.entry_price
         diviseur = money_available / real_money_traded
         percentage_risked_trade = percentage_risked_trade / diviseur
-        leverage = ((1 - self.risk_per_trade) * 100) / (percentage_risked_trade / 100 * real_money_traded)
-        leverage = leverage.__round__()
+
+        leverage = self.init_leverage(percentage_risked_trade, real_money_traded)
 
         print("Maximum loss of current trade : " +
               str(float(leverage * percentage_risked_trade * 1.5).__round__()) + " %")
-
-        leverage = Trade.adjust_leverage(leverage=leverage, risk_trade=percentage_risked_trade)
 
         print("The quantity is : " + str(quantity) + " BTC")
         print("The money traded is : " + str(real_money_traded))
 
         return quantity, leverage
 
+    # TODO: I might do a class with leverage
+    def init_leverage(self, percentage_risked_trade, real_money_traded):
+        leverage = self.leverage_calculation(percentage_risked_trade, real_money_traded)
+        leverage = Trade.correct_leverage(leverage=leverage, risk_trade=percentage_risked_trade)
+
+        return leverage
+
+    def leverage_calculation(self, percentage_risked, money):
+        leverage = ((1 - self.risk_per_trade) * 100) / (percentage_risked / 100 * money)
+        leverage = leverage.__round__()
+        return leverage
+
+    def percentage_risk_calculation(self):
+        if self.stop_loss < self.entry_price:  # Determine if short or long, which change the operation
+            percentage_risked_trade = (1 - self.stop_loss / self.entry_price) * 100  # long
+        else:
+            percentage_risked_trade = (1 - self.entry_price / self.stop_loss) * 100  # short
+        return percentage_risked_trade
+
     @staticmethod
-    def adjust_leverage(leverage, risk_trade):
+    def correct_leverage(leverage, risk_trade):
         r = leverage
-        while leverage * risk_trade * 1.5 >= 100:  # Not tested
+        while leverage * risk_trade * 1.5 >= 100:  # Not tested. Looks to work
             print("High risk of liquidation ! Reducing leverage...")
             r = r - ((r * 0.1).__round__())
 
@@ -153,14 +167,22 @@ class BinanceOrders(Trade):
                                   position_side=position_side,
                                   side=side
                                   )
+        print("The leverage is : " + str(self.leverage))
 
         self.take_profit_recalculation()
 
     def take_profit_recalculation(self):
-        self.entry_price = self.client.futures_position_information(symbol="BTCUSDT")
-        self.entry_price = self.entry_price[1]
+        pos_infos = self.client.futures_position_information(symbol="BTCUSDT")
+        pos_infos = pos_infos[1]
+        self.entry_price = int(pos_infos["entryPrice"])
+        self.entry_price_index = self.study_range - 1
 
-        self.take_profit_calc(self.entry_price, self.stop_loss)
+        self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
+        risk = self.percentage_risk_calculation()
+        money = self.quantity*self.entry_price
+        self.leverage = self.init_leverage(risk, money)
+        self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
+        print("The leverage is now : " + str(self.leverage))
 
     def place_sl_and_tp(self):
         BinanceOrders.take_profit_stop_loss(self, "STOP_MARKET", self.stop_loss)
@@ -168,14 +190,12 @@ class BinanceOrders(Trade):
 
     def place_order(self, position_side, side):
         self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
-        time.sleep(5)
         self.client.futures_create_order(symbol="BTCUSDT",
                                          positionSide=position_side,
                                          quantity=self.quantity,
                                          side=side,
                                          type="MARKET",
                                          )
-        time.sleep(1)
 
     def cancel_all_orders(self):
         self.client.futures_cancel_all_open_orders(symbol="BTCUSDT")
@@ -194,4 +214,3 @@ class BinanceOrders(Trade):
                                          side=side,
                                          positionSide=position_side
                                          )
-        time.sleep(0.5)

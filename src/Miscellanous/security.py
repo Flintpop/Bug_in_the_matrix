@@ -1,5 +1,5 @@
 from cryptography.fernet import Fernet
-
+import os
 
 class Encrypt:
     def __init__(self):
@@ -31,7 +31,7 @@ class Encrypt:
         return open("key.key", "rb").read()
 
     def write_data(self):
-        with open("some_data.txt", "wb") as file:
+        with open("../Output/some_data.txt", "wb") as file:
             file.write(self.f.encrypt(self.one))
             file.write("\n".encode())
             file.write(self.f.encrypt(self.two))
@@ -45,7 +45,7 @@ class GetData:
 
     @staticmethod
     def get_data(key):
-        f = open("some_data.txt", "r")
+        f = open("src/Output/some_data.txt", "r")
         k = Fernet(key)
         infos = []
         decrypted = []
@@ -56,3 +56,25 @@ class GetData:
             decrypted.append(temp)
         f.close()
         return decrypted
+
+    @staticmethod
+    def login():
+        keys = GetData()
+        password = GetData.get_password()
+        key = keys.get_data(password)
+        return key
+
+    @staticmethod
+    def get_password():
+        import platform
+        print(os.getcwd())
+        current_os = platform.system()
+        if current_os == 'Windows':
+            password = input("Please enter password : ")
+        elif current_os == 'Linux' or current_os == 'Darwin':
+            from getpass import getpass
+            password = getpass()
+        else:
+            password = 0
+            print("Critical error, could not determine the os.")
+        return password

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="2de41a6a-af7f-4a67-895b-f35a42abce26" name="darwho server" url="http://51.38.227.217">
+        <fileTransfer rootFolder="/home/darwho" accessType="SFTP" host="51.38.227.217" port="55932" sshConfigId="992f3f67-0874-4b30-b90d-56abc26d6d66" sshConfig="darwho@51.38.227.217:55932 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

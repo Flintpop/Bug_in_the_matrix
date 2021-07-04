@@ -9,22 +9,24 @@ class LogMaster:
     def __init__(self):
         try:
             self.trade_data = self.get_data()
-        except FileNotFoundError:
+        except Exception as e:
+            print("An error occurred")
+            print(e)
             self.init_trade_history()
-            print("Log file initialized")
+            print("Trade history initialized")
             self.trade_data = self.get_data()
 
     @staticmethod
     def init_trade_history():
-        df = pd.DataFrame(columns=['win_loss', 'trade_enter_time', 'money_traded', 'result_money'])
+        df = pd.DataFrame(columns=['win_loss', 'trade_enter_time', 'trade_close_time', 'money_traded', 'result_money'])
         df.to_csv('TradeHistory.csv', index=False)
 
     @staticmethod
     def init_log():
-        f = open("logs.txt", "w+")
+        f = open("src/Output/logs.txt", "w+")
         f.write("File created at : " + str(dt.datetime.now()) + "\n\n")
         f.close()
-        f = open("logs.txt", "a")
+        f = open("../Output/logs.txt", "a")
         f.write("Logs initialized.\n")
         f.close()
 
@@ -41,28 +43,29 @@ class LogMaster:
                 word_print = words
                 word = words
             print(word_print)
-            f = open("logs.txt", "a")
+            f = open("src/Output/logs.txt", "a")
             f.write(str(word))
             f.close()
         except Exception as e:
             print(e)
-            f = open("logs.txt", "a")
+            f = open("src/Output/logs.txt", "a")
             f.write("\n\n" + str(e))
             f.close()
 
     @staticmethod
     def get_data():
-        r = pd.read_csv("TradeHistory.csv")
+        r = pd.read_csv("src/Output/TradeHistory.csv")
         return r
 
     def append_trade_history(self, list_of_results: list):
         self.trade_data = self.get_data()
         list_of_results = pd.DataFrame(data=list_of_results, columns=['win_loss', 'trade_enter_time',
-                                                                      'money_traded', 'result_money'])
+                                                                      'trade_close_time', 'money_traded',
+                                                                      'result_money'])
         frames = [self.trade_data, list_of_results]
         self.trade_data = pd.concat(frames, ignore_index=True)
         self.trade_data.to_csv('TradeHistory.csv', index=False)
-        return pd.read_csv("TradeHistory.csv")
+        return pd.read_csv("src/Output/TradeHistory.csv")
 
 
 class PrintUser:
@@ -106,7 +109,7 @@ class PrintUser:
         print("MACD fake bearish at : ")
         print(fake_bear_time)
 
-    def idk(self, indexes):
+    def print_date_list(self, indexes):
         time_debug = []
         for i in range(len(indexes)):
             date = PrintUser.get_time(self, indexes[i])
@@ -118,7 +121,6 @@ class PrintUser:
         string_two = PrintUser.get_time(self, indexes[i + 1])
         
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
-        print(string)
         self.logs.add_log(string)
 
     def debug_trade_parameters(self, sl, tp, entry_price, enter_price_index, long):
@@ -140,7 +142,7 @@ class PrintUser:
 
     @staticmethod
     def debug_file():
-        f = open("debug_file.txt", "w+")
+        f = open("src/Output/debug_file.txt", "w+")
         f.write("File created at : " + str(dt.datetime.now()))
         f.close()
 
