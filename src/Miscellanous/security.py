@@ -1,5 +1,6 @@
 from cryptography.fernet import Fernet
-import os
+from print_and_debug import os_path_fix
+
 
 class Encrypt:
     def __init__(self):
@@ -45,7 +46,8 @@ class GetData:
 
     @staticmethod
     def get_data(key):
-        f = open("src/Output/some_data.txt", "r")
+        path = os_path_fix() + "some_data.txt"
+        f = open(path, "r")
         k = Fernet(key)
         infos = []
         decrypted = []
@@ -67,7 +69,6 @@ class GetData:
     @staticmethod
     def get_password():
         import platform
-        print(os.getcwd())
         current_os = platform.system()
         if current_os == 'Windows':
             password = input("Please enter password : ")

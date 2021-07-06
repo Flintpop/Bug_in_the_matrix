@@ -5,8 +5,21 @@ import pandas as pd
 # datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
 
 
+def os_path_fix():
+    import platform
+    current_os = platform.system()
+    if current_os == 'Windows':
+        string = "src/Output/"
+    else:
+        string = "../Output/"
+
+    return string
+
+
 class LogMaster:
     def __init__(self):
+        self.logs_path = os_path_fix() + "logs.txt"
+        self.trade_path = os_path_fix() + "TradeHistory.csv"
         try:
             self.trade_data = self.get_data()
         except Exception as e:
@@ -21,17 +34,15 @@ class LogMaster:
         df = pd.DataFrame(columns=['win_loss', 'trade_enter_time', 'trade_close_time', 'money_traded', 'result_money'])
         df.to_csv('TradeHistory.csv', index=False)
 
-    @staticmethod
-    def init_log():
-        f = open("src/Output/logs.txt", "w+")
+    def init_log(self):
+        f = open(self.logs_path, "w+")
         f.write("File created at : " + str(dt.datetime.now()) + "\n\n")
         f.close()
-        f = open("../Output/logs.txt", "a")
+        f = open(self.logs_path, "a")
         f.write("Logs initialized.\n")
         f.close()
 
-    @staticmethod
-    def add_log(words):
+    def add_log(self, words):
         try:
             if type(words) == str:
                 word_print = words.replace("\n", "")
@@ -43,18 +54,17 @@ class LogMaster:
                 word_print = words
                 word = words
             print(word_print)
-            f = open("src/Output/logs.txt", "a")
+            f = open(self.logs_path, "a")
             f.write(str(word))
             f.close()
         except Exception as e:
             print(e)
-            f = open("src/Output/logs.txt", "a")
+            f = open(self.logs_path, "a")
             f.write("\n\n" + str(e))
             f.close()
 
-    @staticmethod
-    def get_data():
-        r = pd.read_csv("src/Output/TradeHistory.csv")
+    def get_data(self):
+        r = pd.read_csv(self.trade_path)
         return r
 
     def append_trade_history(self, list_of_results: list):
@@ -64,12 +74,16 @@ class LogMaster:
                                                                       'result_money'])
         frames = [self.trade_data, list_of_results]
         self.trade_data = pd.concat(frames, ignore_index=True)
-        self.trade_data.to_csv('TradeHistory.csv', index=False)
-        return pd.read_csv("src/Output/TradeHistory.csv")
+        self.trade_data.to_csv(self.trade_path, index=False)
+        return pd.read_csv(self.trade_path)
 
 
 class PrintUser:
     def __init__(self, coin_obj):
+        self.debug_file_path = os_path_fix() + "debug_file.txt"
+        self.logs_path = os_path_fix() + "logs.txt"
+        self.trade_path = os_path_fix() + "TradeHistory.csv"
+
         self.data = coin_obj.data
         self.data_range = coin_obj.data_range
         self.study_range = coin_obj.study_range
@@ -137,12 +151,11 @@ class PrintUser:
 
     def get_time(self, index):
         time_print = self.data['open_date_time']
-        index = index + self.data_range - self.study_range + 1
+        index = index + self.data_range - self.study_range + 2
         return time_print[index]
 
-    @staticmethod
-    def debug_file():
-        f = open("src/Output/debug_file.txt", "w+")
+    def debug_file(self):
+        f = open(self.debug_file_path, "w+")
         f.write("File created at : " + str(dt.datetime.now()))
         f.close()
 

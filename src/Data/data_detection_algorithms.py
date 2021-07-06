@@ -27,7 +27,6 @@ class Core:
 
     @staticmethod
     def comparator_numbers(boolean, element_one, element_two):
-        res = False
         if boolean:
             res = element_one > element_two
         else:
@@ -43,7 +42,7 @@ class Core:
         return res
 
     @staticmethod
-    def macd_cross_detection(macd_indexes, value, max_value=0):
+    def macd_cross_detection(macd_indexes, value, max_value=2):
         crossed = False
         k = 0
         v = 0

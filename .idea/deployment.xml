@@ -5,7 +5,7 @@
       <paths name="darwho server">
         <serverdata>
           <mappings>
-            <mapping deploy="/bug_in_the_matrix" local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

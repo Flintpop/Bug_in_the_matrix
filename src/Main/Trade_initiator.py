@@ -49,7 +49,7 @@ class Trade:
             self.quantity, self.leverage = Trade.quantity_calculator(self, self.balance_available)
 
     def entry_price_calc(self):
-        prices = self.data['close'].tail(self.study_range).values
+        prices = self.data['close'].tail(10).values
         enter_price_index = len(prices) - 2
         enter_price = prices[enter_price_index]
 
@@ -78,6 +78,13 @@ class Trade:
             buffer = float(self.high_wicks[high_l]) * self.buffer
             stop_loss = float(self.high_wicks[high_l]) + buffer
         stop_loss.__round__()
+        if self.long:
+            print(self.low_wicks)
+        else:
+            print(self.high_wicks)
+        if (stop_loss > self.entry_price and self.long) or stop_loss < self.entry_price and not self.long:
+            raise print("Fatal error, could not calculate properly the stop loss; due likely to self.high/low_wicks "
+                        "to be not correct.")
         return int(stop_loss)
 
     def add_to_trade_history(self, win, time_pos_open, time_pos_hit, money, debug):
@@ -149,6 +156,7 @@ class Trade:
         return r
 
 
+# TODO: Fix the number of parameters
 class BinanceOrders(Trade):
     def __init__(self, client: Client, long, data, list_r, study_range, fake_b_indexes):
         super().__init__(long, data, list_r, study_range, fake_b_indexes, client)

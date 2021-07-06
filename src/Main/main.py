@@ -11,14 +11,15 @@ from src.Data.data_detection_algorithms import Core
 
 #####################################################################################
 """
-Version : 0.9.5b
-Date : 3 / 07 / 2021
+Version : 0.9.6b
+Date : 6 / 07 / 2021
 """
 #####################################################################################
 
 
 class Program:
     def __init__(self):
+
         # Get the decryption key
         key = GetData.login()
         successful_login = False
@@ -52,106 +53,97 @@ class Program:
         self.last_high_low_trade_divergence = [0, 0]
 
         self.debug.debug_file()
-        self.state_csv = 0
-        self.all_csv = ["bug_two_debug - middle backbull.csv", "bug_two_debug - middle bear.csv",
-                        "bug_two_debug - last.csv", "bug_two_debug - very last.csv", "bug_two_debug - lol.csv"]
 
         self.wait = 265
 
-        no_exception = True
+        while True:
+            # Spots divergence, then checks if it is not the same it was used.
+            divergence = Program.divergence_spotter(self)
+            same_trade = Program.check_not_same_trade(self)
+            is_not_obsolete = Program.is_not_obsolete(self)
+            if divergence and not same_trade and is_not_obsolete:
+                crossed = Program.trade_final_checking(self)  # Check the final indicators compliance.
+                if crossed and divergence:
+                    Program.init_trade(self, list_r)
 
-        # This no exception is used to write in the log file the exception in the try except.
-        while no_exception:
-            print(self.debug.print_date_list(self.coin.low_wicks_indexes))
-            try:
-                # Spots divergence, then checks if it is not the same it was used.
-                divergence = Program.divergence_spotter(self)
-                same_trade = Program.check_not_same_trade(self)
-                if divergence and not same_trade:
-                    crossed = Program.trade_final_checking(self)  # Check the final indicators compliance.
-                    if crossed and divergence:
-                        Program.init_trade(self, list_r)
-
-                if self.download_mode:
-                    self.debug.logs.add_log("\n\n" + str(dt.datetime.now()) + ": Checking in " + str(self.wait) +
-                                            " seconds...")
-                    time.sleep(self.wait)
-                    self.debug.debug_file()  # Just a debug file that print the last time the bot ran.
-                    start = time.time()
+            if self.download_mode:
+                self.debug.logs.add_log("\n\n" + str(dt.datetime.now()) + ": Checking in " + str(self.wait) +
+                                        " seconds...")
+                time.sleep(self.wait)
+                self.debug.debug_file()  # Just a debug file that print the last time the bot ran.
+                start = time.time()
+                try:
                     self.update()  # Update the whole indicators and data to the latest.
-                    self.debug.logs.add_log("\n\nThe total check lasted " + str(time.time() - start) + " seconds")
-            except Exception as e:
-                self.debug.logs.log(e)
-                no_exception = False
+                except Exception as e:
+                    print(e)
+                    time.sleep(1800)  # Wait 30 minutes.
+                self.debug.logs.add_log("\n\nThe total check lasted " + str(time.time() - start) + " seconds")
 
     def short_long_check(self, length_local, low_high_prices):  # Check if the bot should long or short
         self.long = Program.buy_sell(self, low_high_prices[length_local - 1])
         if self.long:
             self.long = Program.buy_sell(self, low_high_prices[length_local])
 
+    def is_not_obsolete(self):
+        if self.long:
+            index = self.coin.low_prices_indexes[len(self.coin.low_prices_indexes) - 1]
+            r = Core.macd_cross_detection(self.coin.bear_indexes, index, -5)  # Give True if not crossed; e.a if
+            # the divergence is not obsolete.
+        else:
+            index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 1]
+            r = Core.macd_cross_detection(self.coin.bull_indexes, index, -5)
+        if r == -5:
+            print("The divergence is not obsolete")
+            return True
+        else:
+            print("The divergence is obsolete")
+            self.divergence_spotted = False
+            return False
+
     def divergence_spotter(self):
         # TODO: Modify this function to try to put it in data_detection_algorithms.py and make it static;
-        # Need testing.
+        # Need testing. Looks to work. Buggy actually for short.
         data = self.coin
+        divergence = False
+        log = self.debug.logs.add_log
 
-        length_local = len(data.low_local) - 1
-        length_macd = len(data.low_macd) - 1
-
-        Program.short_long_check(self, length_local, data.low_prices_indexes)
+        Program.buy_sell(self, data.study_range - 2)
 
         if self.long:
             local = data.low_local
+            indexes = data.low_prices_indexes
             macd = data.low_macd
+            word = "long"
+
+            Program.short_long_check(self, len(local) - 1, indexes)
         else:
             local = data.high_local
+            indexes = data.high_prices_indexes
             macd = data.high_macd
+            word = "short"
 
-        divergence = Core.comparator_numbers(self.long, local[len(local) - 1], local[len(local)]) \
-                 and Core.comparator_numbers(self.long, macd[len(macd)], macd[len(macd) - 1])
-        if divergence:
-            if self.debug_mode and not self.divergence_spotted:
-                self.debug.debug_divergence_finder(data.low_prices_indexes, length_local - 1, "long")
-            self.divergence_spotted = True
+            Program.short_long_check(self, len(local) - 1, indexes)
 
-        # if self.long:
-        #     # The magical if that determines if there is a divergence or not for long and below same for short
-        #     if data.low_local[length_local - 1] > data.low_local[length_local] and \
-        #             data.low_macd[length_macd - 1] < data.low_macd[length_macd]:
-        #         # good_line_position = self.coin.macd_line_checker(self.coin.low_prices_indexes[length_local - 1],
-        #         #                                                 self.long)
-        #         if self.debug_mode and not self.divergence_spotted:
-        #             self.debug.debug_divergence_finder(data.low_prices_indexes, length_local - 1, "long")
-        #         if True:
-        #             divergence = True
-        #             self.divergence_spotted = True
-        #
-        # length_local = len(data.high_local) - 1
-        # length_macd = len(data.high_macd) - 1
-        #
-        # if not self.long:
-        #     if data.high_local[length_local - 1] < data.high_local[length_local] \
-        #             and data.high_macd[length_macd - 1] > data.high_macd[length_macd]:
-        #         # good_line_position = self.coin.macd_line_checker(self.coin.high_prices_indexes[length_local - 1],
-        #         #                                                  self.long)
-        #         if self.debug_mode and not self.divergence_spotted:
-        #             self.debug.debug_divergence_finder(data.high_prices_indexes, length_local - 1, "short")
-        #         if not divergence:
-        #             if True:
-        #                 divergence = True
-        #                 self.divergence_spotted = True
-        #         else:
-        #             raise self.debug.logs.add_log("\n\nError, return value True in long but algorithm think it is "
-        #                                           "short too.")
+        if self.long and word == 'long' or not self.long and word == 'short':
+            divergence = Core.comparator_numbers(self.long, local[len(local) - 2], local[len(local) - 1]) \
+                     and Core.comparator_numbers(self.long, macd[len(macd) - 1], macd[len(macd) - 2])
+            if divergence:
+                if self.debug_mode and not self.divergence_spotted:
+                    self.debug.debug_divergence_finder(indexes, len(local) - 2, word)
+                    log(self.data)
+                    log(local)
+                    log(macd)
+                    self.divergence_spotted = True
 
         return divergence
 
     def check_not_same_trade(self):
         res = False  # Potentials bugs here, i dunno.
         if self.long:
-            if self.last_high_low_trade_divergence[0] == self.coin.high_local[len(self.coin.high_local) - 1]:
+            if self.last_high_low_trade_divergence[0] == self.coin.low_local[len(self.coin.low_local) - 1]:
                 res = True
         else:
-            if self.last_high_low_trade_divergence[1] == self.coin.low_local[len(self.coin.low_local) - 1]:
+            if self.last_high_low_trade_divergence[1] == self.coin.high_local[len(self.coin.high_local) - 1]:
                 res = True
         return res
 
@@ -195,12 +187,11 @@ class Program:
         self.check_result(binance)
 
     def check_result(self, binance):
-        log = self.debug.logs.add_log
         time_pos_open = self.debug.get_time(self.coin.study_range - 1)  # When is the trade open
 
         while binance.trade_in_going:
-            win, target_hit = Program.check_target(self, binance.stop_loss, binance.take_profit,
-                                                   binance.entry_price)
+            log = self.debug.logs.add_log
+            win, target_hit = Program.check_target(self, binance.stop_loss, binance.take_profit, time_pos_open)
             if target_hit:  # When an order is hit and the position is closed.
                 binance.trade_in_going = False
                 log("\n\n\nTarget hit ! Won ? | " + str(win))
@@ -219,15 +210,15 @@ class Program:
         length = len(last_30_hist) - 2  # -2 to avoid the non closed last candle.
         divergence = Program.divergence_spotter(self)
 
-        self.last_high_low_trade_divergence[0] = self.coin.high_local[len(self.coin.high_local) - 1]
-        self.last_high_low_trade_divergence[1] = self.coin.low_local[len(self.coin.low_local) - 1]
+        self.last_high_low_trade_divergence[0] = self.coin.low_local[len(self.coin.low_local) - 1]
+        self.last_high_low_trade_divergence[1] = self.coin.high_local[len(self.coin.high_local) - 1]
 
         if self.long:
             log("\n\nChecking long...")
             while not macd_cross and divergence:  # Checks if it crossed to enter trade and if it is still a divergence.
                 last_30_hist = self.data['Hist'].tail(5).values
                 divergence = Program.divergence_spotter(self)
-                if last_30_hist[length] > 0 and divergence:
+                if last_30_hist[length] > 0 and divergence and last_30_hist[length-1] < 0:
                     macd_cross = True
                 else:
                     time.sleep(5)
@@ -239,7 +230,7 @@ class Program:
             while not macd_cross and divergence:
                 last_30_hist = self.data['Hist'].tail(5).values
                 divergence = Program.divergence_spotter(self)
-                if last_30_hist[length] < 0 and divergence:
+                if last_30_hist[length] < 0 and divergence and last_30_hist[length-1] > 0:
                     macd_cross = True
                 else:
                     time.sleep(5)
@@ -253,30 +244,22 @@ class Program:
         self.data = self.coin.data
         self.debug.actualize_data(self.coin)
 
-    def debug_csv_data(self):
-        if self.state_csv < len(self.all_csv):
-            name = self.all_csv[self.state_csv]
-            self.state_csv += 1
-            self.coin.read_data_csv(name)
-        self.coin.indicators_init()
-        self.data = self.coin.data
-        self.debug.actualize_data(self.coin)
-
-    def check_target(self, stop_loss, take_profit, enter_price):
+    def check_target(self, stop_loss, take_profit, time_pos_open):
+        # TODO: Update this function with latest Core methods.
         # See if the position is closed, and if it is lost or won.
 
         # Get the data
         low_wicks = self.data['low'].tail(5).values
         high_wicks = self.data['high'].tail(5).values
-        prices = self.data['close'].tail(5).values
+        last_open_time = self.data['open_date_time'].tail(2).values
 
         target_hit = False
         win = False
 
-        len_low = len(low_wicks) - 1
-        len_high = len(high_wicks) - 1
+        len_low = len(low_wicks) - 2
+        len_high = len(high_wicks) - 2
 
-        if prices[len_high] != enter_price and prices[len_low] != enter_price:  # This "if" should not work; to redo.
+        if not last_open_time[0] == time_pos_open:  # Check if not in the first unclosed candle.
             if self.long:
                 if float(low_wicks[len_low]) < stop_loss:  # Below SL
                     target_hit = True

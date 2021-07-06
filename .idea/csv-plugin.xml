@@ -17,13 +17,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\bug_two_debug - first.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
       </map>
     </option>
   </component>
