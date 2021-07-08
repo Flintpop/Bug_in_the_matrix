@@ -162,18 +162,19 @@ class HighLowHistory(Indicators):
 
         list_of_high_low = [[], [], [], [], [], [], [], [], [], [], [], []]
 
-        prices = self.data['close'].tail(self.study_range - 1).values
-        macd = self.data['Hist'].tail(self.study_range - 1).values
-        highs = self.data['high'].tail(self.study_range - 1).values
-        lows = self.data['low'].tail(self.study_range - 1).values
+        prices = self.data['close'].tail(self.study_range).values  # Gotta find a workaround to avoid the last unclosed
+        # candle.
+        macd = self.data['Hist'].tail(self.study_range).values
+        highs = self.data['high'].tail(self.study_range).values
+        lows = self.data['low'].tail(self.study_range).values
 
         # list_data = [prices, highs, macd]
 
-        lim_bu = len(self.bull_indexes)
-        lim_be = len(self.bear_indexes)
+        lim_bull = len(self.bull_indexes)
+        lim_bear = len(self.bear_indexes)
 
         j = 0
-        while j < lim_bu:
+        while j < lim_bull:
             # high prices and macd
 
             temp_high_low, temp_index = Core.finder(j, self.bear_indexes, self.bull_indexes, prices, True)
@@ -191,8 +192,9 @@ class HighLowHistory(Indicators):
             j += 1
 
         j = 0
-        while j < lim_be:
+        while j < lim_bear:
             # Low prices and macd
+
             temp_high_low, temp_index = Core.finder(j, self.bull_indexes, self.bear_indexes, prices, False)
             list_of_high_low[6].append(temp_high_low)
             list_of_high_low[7].append(temp_index)
@@ -210,7 +212,7 @@ class HighLowHistory(Indicators):
         return list_of_high_low
 
     def macd_line_checker(self, index, long):
-        last_macd_data = self.data['MACD'].tail(self.study_range).values
+        last_macd_data = self.data['MACD'].tail(self.study_range - 1).values
 
         res = True
         i = 0

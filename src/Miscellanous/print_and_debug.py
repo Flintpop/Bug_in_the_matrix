@@ -1,5 +1,4 @@
 import datetime as dt
-
 import pandas as pd
 
 # datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
@@ -102,23 +101,23 @@ class PrintUser:
         fake_bear_time = []
 
         for i in range(len(bull_indexes)):
-            date = PrintUser.get_time(self, bull_indexes[i])
+            date = PrintUser.get_time(self, bull_indexes[i] - 1)
             bullish_time.append(date)
         print("MACD cross bullish at : ")
         print(bullish_time)
         for i in range(len(fake_bull)):
-            date = PrintUser.get_time(self, fake_bull[i])
+            date = PrintUser.get_time(self, fake_bull[i] - 1)
             fake_bull_time.append(date)
         print("MACD fake bullish at : ")
         print(fake_bull_time)
 
         for i in range(len(bear_indexes)):
-            date = PrintUser.get_time(self, bear_indexes[i])
+            date = PrintUser.get_time(self, bear_indexes[i] - 1)
             bearish_time.append(date)
         print("MACD cross bearish at : ")
         print(bearish_time)
         for i in range(len(fake_bear)):
-            date = PrintUser.get_time(self, fake_bear[i])
+            date = PrintUser.get_time(self, fake_bear[i] - 1)
             fake_bear_time.append(date)
         print("MACD fake bearish at : ")
         print(fake_bear_time)
@@ -137,8 +136,8 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, sl, tp, entry_price, enter_price_index, long):
-        date = PrintUser.get_time(self, enter_price_index)
+    def debug_trade_parameters(self, sl, tp, entry_price, entry_price_index, long):
+        date = PrintUser.get_time(self, entry_price_index)
 
         string = "\n\nIt is a long ? | " + str(long) + "\n" + "The enter price is : " + str(entry_price) + " at : " + \
                  str(date) + "\n" + "The stop loss is : " + str(sl) + "\n" + "The take profit is : " + str(tp)
@@ -152,7 +151,12 @@ class PrintUser:
     def get_time(self, index):
         time_print = self.data['open_date_time']
         index = index + self.data_range - self.study_range + 2
-        return time_print[index]
+        try:
+            res = time_print[index]
+        except Exception as e:
+            print(e)
+            res = time_print[len(time_print) - 1]
+        return res
 
     def debug_file(self):
         f = open(self.debug_file_path, "w+")

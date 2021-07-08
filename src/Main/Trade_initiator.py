@@ -67,24 +67,22 @@ class Trade:
     def stop_loss_calc(self):
         low_l = len(self.low_wicks) - 1
         high_l = len(self.high_wicks) - 1
-        # if self.low_wicks_indexes[low_l] == self.study_range - 1:
-        #     low_l -= 1
-        # if self.high_wicks_indexes[high_l] == self.study_range - 1:
-        #     high_l -= 1
         if self.long:
             buffer = float(self.low_wicks[low_l]) * self.buffer
             stop_loss = float(self.low_wicks[low_l]) - buffer
         else:
             buffer = float(self.high_wicks[high_l]) * self.buffer
             stop_loss = float(self.high_wicks[high_l]) + buffer
+        print("The stop loss is : " + str(stop_loss))
         stop_loss.__round__()
-        if self.long:
-            print(self.low_wicks)
-        else:
-            print(self.high_wicks)
-        if (stop_loss > self.entry_price and self.long) or stop_loss < self.entry_price and not self.long:
+        print("Long, high wicks and low_wicks and data : ")
+        print(self.long)
+        print(self.high_wicks)
+        print(self.low_wicks)
+        print(self.data)
+        if (stop_loss > self.entry_price and self.long) or (stop_loss < self.entry_price and not self.long):
             raise print("Fatal error, could not calculate properly the stop loss; due likely to self.high/low_wicks "
-                        "to be not correct.")
+                        "to not be correct.")
         return int(stop_loss)
 
     def add_to_trade_history(self, win, time_pos_open, time_pos_hit, money, debug):

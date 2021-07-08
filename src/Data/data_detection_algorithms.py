@@ -5,10 +5,11 @@ class Core:
         temp_high_low = Core.finder_temp(high)
         temp_index = 0
         i = 0
-        limit = len(prices)
+        limit = len(prices) - 2  # Maybe -2 is too much, but one for to go in list and another one to avoid unclosed
+        # candle.
         length = Core.macd_cross_detection(first_indexes, second_indexes[index], limit) - second_indexes[index]
 
-        while i < length and i < limit:
+        while i < length and i <= limit:
             res = Core.comparator_numbers(high, float(prices[i + second_indexes[index]]), float(temp_high_low))
             if res:
                 temp_high_low = prices[i + second_indexes[index]]

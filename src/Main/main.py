@@ -6,20 +6,21 @@ from binance.client import Client
 from src.Main.Trade_initiator import Trade, BinanceOrders
 from src.Miscellanous.print_and_debug import PrintUser, LogMaster
 from src.Data.data import HighLowHistory
-from src.Miscellanous.security import GetData
 from src.Data.data_detection_algorithms import Core
+from src.Miscellanous.security import GetData
 
 #####################################################################################
 """
-Version : 0.9.6b
-Date : 6 / 07 / 2021
+Version : 0.9.7b
+Date : 08 / 07 / 2021
 """
 #####################################################################################
 
 
 class Program:
+    # TODO: Overhaul Program class, a lot of functions could be put to another file. Furthermore, the software should be
+    #  more modular. This implies to put strategy recognition algorithms in packages.
     def __init__(self):
-
         # Get the decryption key
         key = GetData.login()
         successful_login = False
@@ -48,13 +49,19 @@ class Program:
         self.trade_in_going = False
         self.divergence_spotted = False
 
-        list_r = self.coin.list_r
+        self.list_r = self.coin.list_r
 
         self.last_high_low_trade_divergence = [0, 0]
 
         self.debug.debug_file()
 
         self.wait = 265
+
+        print(self.coin.low_wicks)
+        print(self.coin.high_wicks)
+
+        self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes, self.coin.fake_bear_indexes,
+                                         self.coin.fake_bull_indexes)
 
         while True:
             # Spots divergence, then checks if it is not the same it was used.
@@ -64,7 +71,7 @@ class Program:
             if divergence and not same_trade and is_not_obsolete:
                 crossed = Program.trade_final_checking(self)  # Check the final indicators compliance.
                 if crossed and divergence:
-                    Program.init_trade(self, list_r)
+                    Program.init_trade(self)
 
             if self.download_mode:
                 self.debug.logs.add_log("\n\n" + str(dt.datetime.now()) + ": Checking in " + str(self.wait) +
@@ -79,10 +86,13 @@ class Program:
                     time.sleep(1800)  # Wait 30 minutes.
                 self.debug.logs.add_log("\n\nThe total check lasted " + str(time.time() - start) + " seconds")
 
-    def short_long_check(self, length_local, low_high_prices):  # Check if the bot should long or short
-        self.long = Program.buy_sell(self, low_high_prices[length_local - 1])
-        if self.long:
-            self.long = Program.buy_sell(self, low_high_prices[length_local])
+    def short_long_check(self, length_local, low_high_prices_indexes):  # Check if the bot should long or short
+        last_self_long = Program.buy_sell(self, low_high_prices_indexes[length_local - 1])
+        new_self_long = Program.buy_sell(self, low_high_prices_indexes[length_local])
+        if last_self_long == new_self_long:
+            self.long = last_self_long
+        else:
+            self.long = not self.long
 
     def is_not_obsolete(self):
         if self.long:
@@ -93,7 +103,6 @@ class Program:
             index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 1]
             r = Core.macd_cross_detection(self.coin.bull_indexes, index, -5)
         if r == -5:
-            print("The divergence is not obsolete")
             return True
         else:
             print("The divergence is obsolete")
@@ -101,7 +110,7 @@ class Program:
             return False
 
     def divergence_spotter(self):
-        # TODO: Modify this function to try to put it in data_detection_algorithms.py and make it static;
+        # TODO: Modify divergence_spotter function to try to put it in data_detection_algorithms.py and make it static;
         # Need testing. Looks to work. Buggy actually for short.
         data = self.coin
         divergence = False
@@ -115,14 +124,14 @@ class Program:
             macd = data.low_macd
             word = "long"
 
-            Program.short_long_check(self, len(local) - 1, indexes)
+            Program.short_long_check(self, len(indexes) - 1, indexes)
         else:
             local = data.high_local
             indexes = data.high_prices_indexes
             macd = data.high_macd
             word = "short"
 
-            Program.short_long_check(self, len(local) - 1, indexes)
+            Program.short_long_check(self, len(indexes) - 1, indexes)
 
         if self.long and word == 'long' or not self.long and word == 'short':
             divergence = Core.comparator_numbers(self.long, local[len(local) - 2], local[len(local) - 1]) \
@@ -130,6 +139,7 @@ class Program:
             if divergence:
                 if self.debug_mode and not self.divergence_spotted:
                     self.debug.debug_divergence_finder(indexes, len(local) - 2, word)
+                    log("\n\n\nDebug; self.data, local and macd lists.")
                     log(self.data)
                     log(local)
                     log(macd)
@@ -147,11 +157,12 @@ class Program:
                 res = True
         return res
 
-    def init_trade(self, list_r):
+    def init_trade(self):
         log = self.debug.logs.add_log
         self.divergence_spotted = False
         log(self.data)
         fake_b_indexes = [self.coin.fake_bull_indexes, self.coin.fake_bear_indexes]
+        self.debug.actualize_data(self.coin)
 
         log("\n\n\nInitiating trade procedures...")
 
@@ -161,7 +172,7 @@ class Program:
         binance = BinanceOrders(
             long=self.long,
             data=self.data,
-            list_r=list_r,
+            list_r=self.list_r,
             study_range=self.coin.study_range,
             fake_b_indexes=fake_b_indexes,
             client=self.client
@@ -181,13 +192,13 @@ class Program:
             sl=binance.stop_loss,
             tp=binance.take_profit,
             entry_price=binance.entry_price,
-            enter_price_index=self.coin.study_range - 1
+            entry_price_index=self.coin.study_range - 2
         )
 
         self.check_result(binance)
 
     def check_result(self, binance):
-        time_pos_open = self.debug.get_time(self.coin.study_range - 1)  # When is the trade open
+        time_pos_open = self.debug.get_time(self.coin.study_range - 2)  # When is the trade open
 
         while binance.trade_in_going:
             log = self.debug.logs.add_log
@@ -196,13 +207,15 @@ class Program:
                 binance.trade_in_going = False
                 log("\n\n\nTarget hit ! Won ? | " + str(win))
 
-                time_pos_hit = self.debug.get_time(self.coin.study_range - 1)
+                time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
                 real_money = binance.quantity * binance.entry_price
                 Trade.add_to_trade_history(binance, win, time_pos_open, time_pos_hit, real_money, self.log_master)
+                self.divergence_spotted = False
             time.sleep(self.wait)
             self.update()
 
     def trade_final_checking(self):
+        # TODO: trade_final_checking function could be overhauled to reduce the number of lines.
         log = self.debug.logs.add_log
         log("\n\nFinal checking procedures, awaiting a macd cross !")
         macd_cross = False
@@ -220,10 +233,12 @@ class Program:
                 divergence = Program.divergence_spotter(self)
                 if last_30_hist[length] > 0 and divergence and last_30_hist[length-1] < 0:
                     macd_cross = True
+                    self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
+                                                     self.coin.fake_bear_indexes,
+                                                     self.coin.fake_bull_indexes)
                 else:
                     time.sleep(5)
                     self.update()
-                # self.debug_csv_data()
 
         else:
             log("\n\nChecking short...")
@@ -232,20 +247,22 @@ class Program:
                 divergence = Program.divergence_spotter(self)
                 if last_30_hist[length] < 0 and divergence and last_30_hist[length-1] > 0:
                     macd_cross = True
+                    self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
+                                                     self.coin.fake_bear_indexes,
+                                                     self.coin.fake_bull_indexes)
                 else:
                     time.sleep(5)
                     self.update()
-                # self.debug_csv_data()
 
         return macd_cross
 
     def update(self):
         self.coin.update_data()
         self.data = self.coin.data
+        self.list_r = self.coin.list_r
         self.debug.actualize_data(self.coin)
 
     def check_target(self, stop_loss, take_profit, time_pos_open):
-        # TODO: Update this function with latest Core methods.
         # See if the position is closed, and if it is lost or won.
 
         # Get the data

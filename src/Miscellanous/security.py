@@ -16,20 +16,27 @@ class Encrypt:
         self.encrypted = self.f.encrypt(self.one)
         self.encrypted_two = self.f.encrypt(self.two)
 
-        self.write_data()
-
     def get_data_one(self):
         return str(self.f.decrypt(self.encrypted)).replace("b", " ").strip()
+
+    def encrypt_file(self, file):
+        f = open(file, "r")
+        content = f.read()
+        content = self.f.encrypt(content.encode())
+        f.close()
+        f = open(file, 'w')
+        f.write(str(content))
+        f.close()
 
     @staticmethod
     def write_key():
         key = Fernet.generate_key()
-        with open("key.key", "wb") as key_file:
+        with open("../key.key", "wb") as key_file:
             key_file.write(key)
 
     @staticmethod
     def load_key():
-        return open("key.key", "rb").read()
+        return open("../key.key", "rb").read()
 
     def write_data(self):
         with open("../Output/some_data.txt", "wb") as file:
@@ -77,5 +84,17 @@ class GetData:
             password = getpass()
         else:
             password = 0
-            print("Critical error, could not determine the os.")
+            raise print("Critical error, could not determine the os.")
         return password
+
+    @staticmethod
+    def decrypt_file(file, key):
+        k = Fernet(key)
+        f = open(file, "r")
+        content = f.read()
+        print(content)
+        decrypted = k.decrypt(bytes(content.encode())).decode()
+        f.close()
+        with open("test3.py", "w+") as f:
+            f.write(str(decrypted))
+        f.close()
