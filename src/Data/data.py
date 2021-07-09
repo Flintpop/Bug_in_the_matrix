@@ -238,15 +238,15 @@ class HighLowHistory(Indicators):
         self.bull_indexes, self.bear_indexes, self.fake_bull_indexes, self.fake_bear_indexes = \
             self.macd_trend_data()
 
-        list_r = self.high_low_finder_v2()
+        self.list_r = self.high_low_finder_v2()
 
-        self.high_local, self.high_prices_indexes = list_r[0], list_r[1]
-        self.high_wicks, self.high_wicks_indexes = list_r[2], list_r[3]
-        self.high_macd, self.high_macd_indexes = list_r[4], list_r[5]
+        self.high_local, self.high_prices_indexes = self.list_r[0], self.list_r[1]
+        self.high_wicks, self.high_wicks_indexes = self.list_r[2], self.list_r[3]
+        self.high_macd, self.high_macd_indexes = self.list_r[4], self.list_r[5]
 
-        self.low_local, self.low_prices_indexes = list_r[6], list_r[7]
-        self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
-        self.low_macd, self.low_macd_indexes = list_r[10], list_r[11]
+        self.low_local, self.low_prices_indexes = self.list_r[6], self.list_r[7]
+        self.low_wicks, self.low_wicks_indexes = self.list_r[8], self.list_r[9]
+        self.low_macd, self.low_macd_indexes = self.list_r[10], self.list_r[11]
 
     def update_data(self):
         self.data = Data.download_data(self)

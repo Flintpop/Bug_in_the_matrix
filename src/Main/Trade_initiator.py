@@ -2,7 +2,7 @@ from binance.client import Client
 
 
 class Trade:
-    def __init__(self, long, data, list_r, study_range, fake_b_indexes, client):
+    def __init__(self, long, data, list_r, study_range, fake_b_indexes, client, log):
 
         self.risk_ratio = 0.675
         self.risk_per_trade = 21
@@ -15,6 +15,7 @@ class Trade:
         self.long = long
         self.data = data
         self.study_range = study_range
+        self.log = log
 
         self.high_wicks, self.high_wicks_indexes = list_r[2], list_r[3]
         self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
@@ -41,7 +42,7 @@ class Trade:
             self.take_profit = Trade.take_profit_calc(self, self.entry_price, self.stop_loss)
 
             self.trade_in_going = True
-            print("Trade in going !")
+            self.log("\n\nTrade in going !")
 
             self.current_balance = float(self.infos["totalMarginBalance"])
             self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
@@ -75,11 +76,15 @@ class Trade:
             stop_loss = float(self.high_wicks[high_l]) + buffer
         print("The stop loss is : " + str(stop_loss))
         stop_loss.__round__()
-        print("Long, high wicks and low_wicks and data : ")
-        print(self.long)
-        print(self.high_wicks)
-        print(self.low_wicks)
-        print(self.data)
+        self.log("\n\nLong, high wicks and low_wicks and data : \n")
+        self.log(self.long)
+        self.log("\n")
+        self.log(self.high_wicks)
+        self.log("\n")
+        self.log(self.low_wicks)
+        self.log("\n")
+        self.log(self.data)
+        self.log("\n")
         if (stop_loss > self.entry_price and self.long) or (stop_loss < self.entry_price and not self.long):
             raise print("Fatal error, could not calculate properly the stop loss; due likely to self.high/low_wicks "
                         "to not be correct.")
@@ -108,11 +113,11 @@ class Trade:
 
         leverage = self.init_leverage(percentage_risked_trade, real_money_traded)
 
-        print("Maximum loss of current trade : " +
-              str(float(leverage * percentage_risked_trade * 1.5).__round__()) + " %")
+        self.log("\nMaximum loss of current trade : " +
+                 str(float(leverage * percentage_risked_trade * 1.5).__round__()) + " %")
 
-        print("The quantity is : " + str(quantity) + " BTC")
-        print("The money traded is : " + str(real_money_traded))
+        self.log("\nThe quantity is : " + str(quantity) + " BTC")
+        self.log("\nThe money traded is : " + str(real_money_traded))
 
         return quantity, leverage
 
@@ -156,8 +161,8 @@ class Trade:
 
 # TODO: Fix the number of parameters
 class BinanceOrders(Trade):
-    def __init__(self, client: Client, long, data, list_r, study_range, fake_b_indexes):
-        super().__init__(long, data, list_r, study_range, fake_b_indexes, client)
+    def __init__(self, client: Client, long, data, list_r, study_range, fake_b_indexes, log):
+        super().__init__(long, data, list_r, study_range, fake_b_indexes, client, log)
 
         BinanceOrders.cancel_all_orders(self)
 
@@ -173,7 +178,6 @@ class BinanceOrders(Trade):
                                   position_side=position_side,
                                   side=side
                                   )
-        print("The leverage is : " + str(self.leverage))
 
         self.take_profit_recalculation()
 
@@ -185,10 +189,10 @@ class BinanceOrders(Trade):
 
         self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
         risk = self.percentage_risk_calculation()
-        money = self.quantity*self.entry_price
+        money = self.quantity * self.entry_price
         self.leverage = self.init_leverage(risk, money)
         self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
-        print("The leverage is now : " + str(self.leverage))
+        self.log("\n\nThe leverage is now : " + str(self.leverage))
 
     def place_sl_and_tp(self):
         BinanceOrders.take_profit_stop_loss(self, "STOP_MARKET", self.stop_loss)
