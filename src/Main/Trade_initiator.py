@@ -37,8 +37,8 @@ class Trade:
 
     def init_calculations(self):
         if not self.trade_in_going:
-            self.stop_loss = Trade.stop_loss_calc(self)
             self.entry_price, self.entry_price_index = self.entry_price_calc()
+            self.stop_loss = Trade.stop_loss_calc(self)
             self.take_profit = Trade.take_profit_calc(self, self.entry_price, self.stop_loss)
 
             self.trade_in_going = True
@@ -52,9 +52,9 @@ class Trade:
     def entry_price_calc(self):
         prices = self.data['close'].tail(10).values
         enter_price_index = len(prices) - 2
-        enter_price = prices[enter_price_index]
-
-        return float(enter_price), int(enter_price_index)
+        entry_price = prices[enter_price_index]
+        self.log(entry_price)
+        return float(entry_price), int(enter_price_index)
 
     def take_profit_calc(self, enter_price, stop_loss):
         if self.long:
