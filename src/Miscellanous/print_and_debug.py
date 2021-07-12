@@ -137,16 +137,13 @@ class PrintUser:
         self.logs.add_log(string)
 
     def debug_trade_parameters(self, sl, tp, entry_price, entry_price_index, long):
+        log = self.logs.add_log
         date = PrintUser.get_time(self, entry_price_index)
 
-        string = "\n\nIt is a long ? | " + str(long) + "\n" + "The enter price is : " + str(entry_price) + " at : " + \
-                 str(date) + "\n" + "The stop loss is : " + str(sl) + "\n" + "The take profit is : " + str(tp)
-        print("It is a long ? | " + str(long))
-        print("The enter price is : " + str(entry_price) + " at : " + str(date))
-        print("The stop loss is : " + str(sl))
-        print("The take profit is : " + str(tp))
-
-        self.logs.add_log(string)
+        log("\n\n\nIt is a long ? | " + str(long))
+        log("\nThe enter price is : " + str(entry_price) + " at : " + str(date))
+        log("\nThe stop loss is : " + str(sl))
+        log("\nThe take profit is : " + str(tp))
 
     def get_time(self, index):
         time_print = self.data['open_date_time']

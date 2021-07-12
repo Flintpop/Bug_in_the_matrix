@@ -6,7 +6,7 @@ from time import sleep
 import datetime as dt
 
 
-def send_email():
+def send_email(word):
     port = 587  # For starttls
     smtp_server = "smtp.gmail.com"
     sender_email = 'bestfriendnotifier@gmail.com'
@@ -20,11 +20,11 @@ def send_email():
     </head>
     <body>
     <div>
-    The bot has stopped working.
+    {}
     </div>
     </body
     </html>
-    """
+    """.format(word)
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = sender_email
@@ -43,21 +43,22 @@ def send_email():
 
 
 if __name__ == '__main__':
+    wait = 600
     print("WatchTowerLaunched !")
     stopped = False
     f = open("Output/debug_file.txt", "r")
     last_content = f.read()
     f.close()
-    sleep(900)
+    sleep(wait)
     while not stopped:
         f = open("Output/debug_file.txt", "r")
         content = f.read()
         if content == last_content:
             print("\n Bot stopped !")
             stopped = True
-            send_email()
+            send_email("Bot stopped !")
         else:
             last_content = f.read()
             f.close()
-            sleep(900)
+            sleep(wait)
             print(dt.datetime.now())

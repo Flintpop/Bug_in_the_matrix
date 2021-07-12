@@ -8,11 +8,12 @@ from src.Miscellanous.print_and_debug import PrintUser, LogMaster
 from src.Data.data import HighLowHistory
 from src.Data.data_detection_algorithms import Core
 from src.Miscellanous.security import GetData
+from src.WatchTower import send_email
 
 #####################################################################################
 """
-Version : 0.9.7.2b
-Date : 09 / 07 / 2021
+Version : 1.0.0
+Date : 12 / 07 / 2021
 """
 #####################################################################################
 
@@ -55,10 +56,7 @@ class Program:
 
         self.debug.debug_file()
 
-        self.wait = 265
-
-        self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes, self.coin.fake_bear_indexes,
-                                         self.coin.fake_bull_indexes)
+        self.wait = 285
 
         while True:
             # Spots divergence, then checks if it is not the same it was used.
@@ -71,17 +69,13 @@ class Program:
                     Program.init_trade(self)
 
             if self.download_mode:
-                self.debug.logs.add_log("\n\n" + str(dt.datetime.now()) + ": Checking in " + str(self.wait) +
-                                        " seconds...")
                 time.sleep(self.wait)
                 self.debug.debug_file()  # Just a debug file that print the last time the bot ran.
-                start = time.time()
                 try:
                     self.update()  # Update the whole indicators and data to the latest.
                 except Exception as e:
-                    print(e)
+                    self.debug.logs.add_log(e)
                     time.sleep(1800)  # Wait 30 minutes.
-                self.debug.logs.add_log("\n\nThe total check lasted " + str(time.time() - start) + " seconds")
 
     def short_long_check(self, length_local, low_high_prices_indexes):  # Check if the bot should long or short
         last_self_long = Program.buy_sell(self, low_high_prices_indexes[length_local - 1])
@@ -103,12 +97,10 @@ class Program:
             return True
         else:
             print("The divergence is obsolete")
-            self.divergence_spotted = False
             return False
 
     def divergence_spotter(self):
         # TODO: Modify divergence_spotter function to try to put it in data_detection_algorithms.py and make it static;
-        # Need testing. Looks to work. Buggy actually for short.
         data = self.coin
         divergence = False
         log = self.debug.logs.add_log
@@ -181,8 +173,8 @@ class Program:
         log("\nTrade orders calculated.")
 
         log("\nInitiating binance procedures...")
-        # binance.init_long_short()
-        # binance.place_sl_and_tp()
+        binance.init_long_short()
+        binance.place_sl_and_tp()
         log("\nOrders placed and position open !")
         # Just print all the trade informations and add it to the log file.
         PrintUser.debug_trade_parameters(
@@ -198,6 +190,13 @@ class Program:
 
     def check_result(self, binance):
         time_pos_open = self.debug.get_time(self.coin.study_range - 2)  # When is the trade open
+        if self.long:
+            word = "long"
+        else:
+            word = "short"
+        send_email(f"<p>Trade initiated !</p>"
+                   f"<p>It is a {word}</p>"
+                   f"<p>The entry price is {str(binance.entry_price)} at : {time_pos_open}</p>")
 
         while binance.trade_in_going:
             log = self.debug.logs.add_log
@@ -217,6 +216,7 @@ class Program:
     def trade_final_checking(self):
         # TODO: trade_final_checking function could be overhauled to reduce the number of lines.
         log = self.debug.logs.add_log
+        log("\n\n" + str(dt.datetime.now()) + " : Has entered trade_final_checking")
         log("\n\nFinal checking procedures, awaiting a macd cross !")
         macd_cross = False
         last_30_hist = self.data['Hist'].tail(5).values
@@ -286,10 +286,10 @@ class Program:
 
         if not last_open_time[0] == time_pos_open:  # Check if not in the first unclosed candle.
             if self.long:
-                if float(low_wicks[len_low]) < stop_loss:  # Below SL
+                if float(low_wicks[len_low]) <= stop_loss:  # Below SL
                     target_hit = True
                     win = False
-                elif float(high_wicks[len_high]) > take_profit:  # Above TP
+                elif float(high_wicks[len_high]) >= take_profit:  # Above TP
                     target_hit = True
                     win = True
             else:

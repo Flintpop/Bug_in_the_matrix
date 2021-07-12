@@ -1,12 +1,11 @@
 
 class Core:
     @staticmethod
-    def finder(index, first_indexes, second_indexes, prices, high):  # Not tested ! Looks to work though.
+    def finder(index, first_indexes, second_indexes, prices, high):
         temp_high_low = Core.finder_temp(high)
         temp_index = 0
         i = 0
-        limit = len(prices) - 2  # Maybe -2 is too much, but one for to go in list and another one to avoid unclosed
-        # candle.
+        limit = len(prices) - 2
         length = Core.macd_cross_detection(first_indexes, second_indexes[index], limit) - second_indexes[index]
 
         while i < length and i <= limit:
@@ -67,8 +66,3 @@ class Core:
             list_return[0].append(temp_high_low)
             list_return[1].append(temp_index)
         return list_return
-
-    @staticmethod
-    def list_appender(list_one: list, list_two: list, value, value_two):  # Useless tbh
-        list_one.append(value)
-        list_two.append(value_two)

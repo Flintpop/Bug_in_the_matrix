@@ -53,7 +53,7 @@ class Trade:
         prices = self.data['close'].tail(10).values
         enter_price_index = len(prices) - 2
         entry_price = prices[enter_price_index]
-        self.log(entry_price)
+
         return float(entry_price), int(enter_price_index)
 
     def take_profit_calc(self, enter_price, stop_loss):
@@ -184,7 +184,9 @@ class BinanceOrders(Trade):
     def take_profit_recalculation(self):
         pos_infos = self.client.futures_position_information(symbol="BTCUSDT")
         pos_infos = pos_infos[1]
-        self.entry_price = int(pos_infos["entryPrice"])
+        self.entry_price = float(pos_infos["entryPrice"])
+        self.entry_price.__round__()
+        self.entry_price = int(self.entry_price)
         self.entry_price_index = self.study_range - 1
 
         self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
@@ -209,7 +211,6 @@ class BinanceOrders(Trade):
 
     def cancel_all_orders(self):
         self.client.futures_cancel_all_open_orders(symbol="BTCUSDT")
-        # Doesnt close positions => Be careful.
 
     def take_profit_stop_loss(self, type_action, price_stop):
         side = "BUY"

@@ -18,22 +18,14 @@ class Data:
         self.data_range = 750  # Min is 600 cuz ema.
         self.study_range = self.data_range - 600
 
-        # self.data_range = 659
-        # self.study_range = self.data_range - 500
-
         self.data = Data.download_data(self)
-        # self.data = pd.read_csv("bug_two_debug - first.csv")
 
     def download_data(self):
         if self.interval_unit == '5T':
             start_min = (self.data_range + 1) * 5
             start_str = str(start_min) + ' minutes ago UTC'
             interval_data = '5m'
-
-            # start = time.time()
             data = Indicators.data_download(self, start_str, interval_data)
-            # end = time.time()
-            # print("The download lasted " + str(end - start) + " seconds")
 
             return data
 
@@ -47,16 +39,6 @@ class Data:
         data['open_date_time'] = [dt.datetime.fromtimestamp(x / 1000) for x in data.open_time]
         data = data[['open_date_time', 'open', 'high', 'low', 'close', 'volume']]
         return data
-
-    def read_data_csv(self, name):
-        self.data = pd.read_csv(name)
-
-    def data_to_csv(self, name):
-        self.data.to_csv(name)
-        import csv
-        file = open(name)
-        reader = csv.reader(file)
-        self.data_range = len(list(reader)) - 2
 
 
 class Indicators(Data):
@@ -100,7 +82,6 @@ class HighLowHistory(Indicators):
 
         self.list_r = self.high_low_finder_v2()
 
-        # I could overhaul this part below
         self.high_local, self.high_prices_indexes = self.list_r[0], self.list_r[1]
         self.high_wicks, self.high_wicks_indexes = self.list_r[2], self.list_r[3]
         self.high_macd, self.high_macd_indexes = self.list_r[4], self.list_r[5]
@@ -152,8 +133,6 @@ class HighLowHistory(Indicators):
             else:
                 successive_hist_macd_bear = 0
                 successive_hist_macd_bull = 0
-        # if self.debug_mode:
-        #     Program.debug_macd_trend_data(self, bull_indexes, bear_indexes, fake_bull, fake_bear)
 
         return bull_indexes, bear_indexes, fake_bull, fake_bear
 
