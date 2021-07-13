@@ -3,7 +3,6 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from time import sleep
-import datetime as dt
 
 
 def send_email(word):
@@ -51,14 +50,13 @@ if __name__ == '__main__':
     f.close()
     sleep(wait)
     while not stopped:
-        f = open("Output/debug_file.txt", "r")
-        content = f.read()
+        file = open("Output/debug_file.txt", "r")
+        content = file.read()
         if content == last_content:
             print("\n Bot stopped !")
             stopped = True
             send_email("Bot stopped !")
         else:
-            last_content = f.read()
-            f.close()
+            last_content = content
+            file.close()
             sleep(wait)
-            print(dt.datetime.now())
