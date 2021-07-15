@@ -8,11 +8,10 @@ from src.Miscellanous.print_and_debug import PrintUser, LogMaster
 from src.Data.data import HighLowHistory
 from src.Data.data_detection_algorithms import Core
 from src.Miscellanous.security import GetData
-from src.WatchTower import send_email
 
 #####################################################################################
 """
-Version : 1.0.1
+Version : 1.0.2
 Date : 13 / 07 / 2021
 """
 #####################################################################################
@@ -57,6 +56,8 @@ class Program:
         self.debug.debug_file()
 
         self.wait = 285
+
+        self.debug.logs.add_log("Bot initialized !")
 
         while True:
             # Spots divergence, then checks if it is not the same it was used.
@@ -190,13 +191,6 @@ class Program:
 
     def check_result(self, binance):
         time_pos_open = self.debug.get_time(self.coin.study_range - 2)  # When is the trade open
-        if self.long:
-            word = "long"
-        else:
-            word = "short"
-        send_email(f"<p>Trade initiated !</p>"
-                   f"<p>It is a {word}</p>"
-                   f"<p>The entry price is {str(binance.entry_price)} at : {time_pos_open}</p>")
 
         while binance.trade_in_going:
             log = self.debug.logs.add_log
@@ -206,8 +200,17 @@ class Program:
                 log("\n\n\nTarget hit ! Won ? | " + str(win))
 
                 time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
-                real_money = binance.quantity * binance.entry_price
-                Trade.add_to_trade_history(binance, win, time_pos_open, time_pos_hit, real_money, self.log_master)
+
+                PrintUser.send_result_email(
+                    long=self.long,
+                    entry_price=binance.entry_price,
+                    time_pos_hit=time_pos_hit,
+                    time_pos_open=time_pos_open,
+                    win=win
+                )
+
+                Trade.add_to_trade_history(binance, win, time_pos_open, time_pos_hit, binance.current_balance,
+                                           self.log_master)
                 self.divergence_spotted = False
             time.sleep(self.wait)
             self.debug.debug_file()

@@ -1,5 +1,6 @@
 import datetime as dt
 import pandas as pd
+from src.WatchTower import send_email
 
 # datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
 
@@ -159,6 +160,32 @@ class PrintUser:
         f = open(self.debug_file_path, "w+")
         f.write("File created at : " + str(dt.datetime.now()))
         f.close()
+
+    @staticmethod
+    def trade_type_string(long):
+        if long:
+            res = "long"
+        else:
+            res = "short"
+        return res
+
+    @staticmethod
+    def win_loss_string(win):
+        if win:
+            res = "win"
+        else:
+            res = "loss"
+        return res
+
+    @staticmethod
+    def send_result_email(long, win, entry_price, time_pos_hit, time_pos_open):
+        won = PrintUser.win_loss_string(win)
+        word = PrintUser.trade_type_string(long)
+
+        send_email(f"<p>Trade completed !</p>"
+                   f"<p>It is a {str(word)}, and the trade is {str(won)}</p>"
+                   f"<p>The entry price is {str(entry_price)} at : {str(time_pos_open)}</p>"
+                   f"<p>The trade was closed at {str(time_pos_hit)} </p>")
 
 
 if __name__ == '__main__':
