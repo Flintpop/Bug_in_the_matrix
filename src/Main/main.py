@@ -6,13 +6,14 @@ from binance.client import Client
 from src.Main.Trade_initiator import Trade, BinanceOrders
 from src.Miscellanous.print_and_debug import PrintUser, LogMaster
 from src.Data.data import HighLowHistory
-from src.Data.data_detection_algorithms import Core
+from data_detection_algorithms import Core
 from src.Miscellanous.security import GetData
+from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.0.2
-Date : 13 / 07 / 2021
+Version : 1.0.5
+Date : 16 / 07 / 2021
 """
 #####################################################################################
 
@@ -34,10 +35,12 @@ class Program:
         key = ""
         print(key)
 
-        self.long = False
-        self.download_mode = True
+        settings = Parameters()
 
-        self.debug_mode = True
+        self.long = False
+        self.download_mode = settings.download_mode
+
+        self.debug_mode = settings.debug_mode
 
         self.coin = HighLowHistory(self.client)
         self.debug = PrintUser(self.coin)
@@ -152,7 +155,6 @@ class Program:
         log = self.debug.logs.add_log
         self.divergence_spotted = False
         log(self.data)
-        fake_b_indexes = [self.coin.fake_bull_indexes, self.coin.fake_bear_indexes]
         self.debug.actualize_data(self.coin)
 
         log("\n\n\nInitiating trade procedures...")
@@ -161,11 +163,7 @@ class Program:
         # chosen per trade and other parameters. This class contains also all the methods related to actually open a 
         # position and open orders.
         binance = BinanceOrders(
-            long=self.long,
-            data=self.data,
-            list_r=self.list_r,
-            study_range=self.coin.study_range,
-            fake_b_indexes=fake_b_indexes,
+            coin=self.coin,
             client=self.client,
             log=self.debug.logs.add_log
         )

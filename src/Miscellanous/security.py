@@ -83,7 +83,6 @@ class GetData:
             from getpass import getpass
             password = getpass()
         else:
-            password = 0
             raise print("Critical error, could not determine the os.")
         return password
 

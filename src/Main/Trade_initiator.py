@@ -1,27 +1,27 @@
-from binance.client import Client
+from src.Miscellanous.Settings import Parameters
 import time
 
 
 class Trade:
-    def __init__(self, long, data, list_r, study_range, fake_b_indexes, client, log):
-
-        self.risk_ratio = 0.675
-        self.risk_per_trade = 21
+    def __init__(self, coin, client, log):
+        settings = Parameters()
+        self.risk_ratio = settings.risk_ratio
+        self.risk_per_trade = settings.risk_per_trade_brut
         self.risk_per_trade_brut = self.risk_per_trade
         self.risk_per_trade = 1 - self.risk_per_trade / 100
 
-        self.buffer = 0.001
+        self.buffer = settings.buffer
         self.client = client
 
-        self.long = long
-        self.data = data
-        self.study_range = study_range
+        self.long = coin.long
+        self.data = coin.data
+        self.study_range = settings.study_range
         self.log = log
 
-        self.high_wicks, self.high_wicks_indexes = list_r[2], list_r[3]
-        self.low_wicks, self.low_wicks_indexes = list_r[8], list_r[9]
-        self.fake_bull_indexes = fake_b_indexes[0]
-        self.fake_bear_indexes = fake_b_indexes[1]
+        self.high_wicks, self.high_wicks_indexes = coin.list_r[2], coin.list_r[3]
+        self.low_wicks, self.low_wicks_indexes = coin.list_r[8], coin.list_r[9]
+        self.fake_bull_indexes = coin.fake_bull_indexes
+        self.fake_bear_indexes = coin.fake_bear_indexes
 
         self.trade_in_going = False
 
@@ -107,7 +107,7 @@ class Trade:
 
         percentage_risked_trade = self.percentage_risk_calculation()
         self.log("\n\nThe percentage risked on the trade is wo leverage : " + str(percentage_risked_trade))
-        leverage = self.init_leverage(percentage_risked_trade, money_divided)
+        leverage = self.correct_leverage(percentage_risked_trade, money_divided)
         self.log("\nThe leverage is : " + str(leverage))
 
         quantity = (money_traded / self.entry_price) * leverage
@@ -121,18 +121,11 @@ class Trade:
 
         return quantity, leverage
 
-    # TODO: I might do a class with leverage
-    def init_leverage(self, percentage_risked_trade, money_divided):
-
-        leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
-        leverage = self.correct_leverage(leverage=leverage, risk_trade=percentage_risked_trade)
-
-        return leverage
-
     def leverage_calculation(self, percentage_risked, money_divided):
         self.log("\nThe diviseur in leverage calc is : " + str(percentage_risked * self.risk_per_trade_brut))
         leverage = (1 / percentage_risked * self.risk_per_trade_brut) * money_divided
         leverage = leverage.__round__()
+        self.correct_leverage(leverage=leverage, risk_trade=percentage_risked)
         return int(leverage)
 
     def percentage_risk_calculation(self):
@@ -142,28 +135,27 @@ class Trade:
             percentage_risked_trade = (1 - self.entry_price / self.stop_loss) * 100  # short
         return percentage_risked_trade
 
-    def correct_leverage(self, leverage, risk_trade):
-        r = leverage
+    @staticmethod
+    def correct_leverage(leverage, risk_trade):
         while leverage * risk_trade * 1.5 >= 100:  # Not tested. Looks to work
-            self.log("\nHigh risk of liquidation ! Reducing leverage...")
-            r = r - ((r * 0.1).__round__())
+            print("\nHigh risk of liquidation ! Reducing leverage...")
+            leverage = leverage - ((leverage * 0.1).__round__())
 
         if leverage >= 125:
-            self.log("\nLeverage too high. The platform cannot handle it.")
-            r = 120
+            print("\nLeverage too high. The platform cannot handle it.")
+            leverage = 120
         elif leverage >= 90:
-            self.log("\nVery high leverage ! Think about putting more money in the trade !")
+            print("\nVery high leverage ! Think about putting more money in the trade !")
         elif leverage < 1:
             print("\nLeverage too low !")
-            r = 1
-        self.log("\nThe leverage is : " + str(leverage))
-        return r
+            leverage = 1
+        print("\nThe leverage is : " + str(leverage))
+        return leverage
 
 
-# TODO: Fix the number of parameters
 class BinanceOrders(Trade):
-    def __init__(self, client: Client, long, data, list_r, study_range, fake_b_indexes, log):
-        super().__init__(long, data, list_r, study_range, fake_b_indexes, client, log)
+    def __init__(self, coin, client, log):
+        super().__init__(coin, client, log)
 
         BinanceOrders.cancel_all_orders(self)
 
@@ -182,19 +174,19 @@ class BinanceOrders(Trade):
 
         # Function completely buggy and very weird, returns on leverage 1 but say it's 0 ?.
         # self.take_profit_recalculation()
-
-    def take_profit_recalculation(self):
-        pos_infos = self.client.futures_position_information(symbol="BTCUSDT")
-        pos_infos = pos_infos[1]
-        self.entry_price = float(pos_infos["entryPrice"])
-        self.entry_price = self.entry_price.__round__()
-        self.entry_price = int(self.entry_price)
-        self.entry_price_index = self.study_range - 1
-
-        self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
-        risk = self.percentage_risk_calculation()
-        self.leverage = self.init_leverage(risk)
-        self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
+    #
+    # def take_profit_recalculation(self):
+    #     pos_infos = self.client.futures_position_information(symbol="BTCUSDT")
+    #     pos_infos = pos_infos[1]
+    #     self.entry_price = float(pos_infos["entryPrice"])
+    #     self.entry_price = self.entry_price.__round__()
+    #     self.entry_price = int(self.entry_price)
+    #     self.entry_price_index = self.study_range - 1
+    #
+    #     self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
+    #     risk = self.percentage_risk_calculation()
+    #     self.leverage = self.init_leverage(risk)
+    #     self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
 
     def place_sl_and_tp(self):
         BinanceOrders.take_profit_stop_loss(self, "STOP_MARKET", self.stop_loss)

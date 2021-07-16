@@ -1,9 +1,7 @@
 import datetime as dt
 import pandas as pd
 from data_detection_algorithms import Core
-# from binance.client import Client
-# from security import GetData
-
+from src.Miscellanous.Settings import Parameters
 
 # TODO: Refactor the MACD trend data func, too much code in 1 function
 # TODO: Try to make as much functions as possible.
@@ -11,12 +9,14 @@ from data_detection_algorithms import Core
 
 class Data:
     def __init__(self, client):
-        self.symbol_trade = 'BTCUSDT'
+        settings = Parameters()
+        self.symbol_trade = settings.symbol_trade
         self.client = client
-        self.interval_unit = '5T'
+        self.interval_unit = settings.interval_unit
 
-        self.data_range = 750  # Min is 600 cuz ema.
-        self.study_range = self.data_range - 600
+        self.data_range = settings.data_range
+        self.study_range = settings.study_range
+        self.n_plot_macd = settings.n_plot_macd
 
         self.data = Data.download_data(self)
 
@@ -47,7 +47,6 @@ class Indicators(Data):
 
         self.ema_trend = self.ema(600)
         self.ema_fast = self.ema(150)
-        self.n_plot_macd = 3
 
         self.macd()
 
@@ -69,8 +68,6 @@ class Indicators(Data):
         # Signal line
         self.data['Hist'] = macd - signal
         self.data['Signal_Line'] = Indicators.ema(self, period_signal, column='MACD')
-
-    # TODO: Maybe I can separate the three functions below to make them go in another class.
 
 
 class HighLowHistory(Indicators):
