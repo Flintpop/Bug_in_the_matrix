@@ -3,7 +3,7 @@ import time
 import datetime as dt
 from binance.client import Client
 
-from src.Main.Trade_initiator import Trade, BinanceOrders
+from src.Main.Trade import Trade, BinanceOrders
 from src.Miscellanous.print_and_debug import PrintUser, LogMaster
 from src.Data.data import HighLowHistory
 from data_detection_algorithms import Core
@@ -12,8 +12,8 @@ from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.0.5
-Date : 16 / 07 / 2021
+Version : 1.0.6
+Date : 17 / 07 / 2021
 """
 #####################################################################################
 
@@ -165,7 +165,8 @@ class Program:
         binance = BinanceOrders(
             coin=self.coin,
             client=self.client,
-            log=self.debug.logs.add_log
+            log=self.debug.logs.add_log,
+            long=self.long
         )
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()

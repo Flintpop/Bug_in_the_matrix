@@ -3,7 +3,7 @@ import time
 
 
 class Trade:
-    def __init__(self, coin, client, log):
+    def __init__(self, coin, long, client, log):
         settings = Parameters()
         self.risk_ratio = settings.risk_ratio
         self.risk_per_trade = settings.risk_per_trade_brut
@@ -13,7 +13,7 @@ class Trade:
         self.buffer = settings.buffer
         self.client = client
 
-        self.long = coin.long
+        self.long = long
         self.data = coin.data
         self.study_range = settings.study_range
         self.log = log
@@ -144,8 +144,6 @@ class Trade:
         if leverage >= 125:
             print("\nLeverage too high. The platform cannot handle it.")
             leverage = 120
-        elif leverage >= 90:
-            print("\nVery high leverage ! Think about putting more money in the trade !")
         elif leverage < 1:
             print("\nLeverage too low !")
             leverage = 1
@@ -154,8 +152,8 @@ class Trade:
 
 
 class BinanceOrders(Trade):
-    def __init__(self, coin, client, log):
-        super().__init__(coin, client, log)
+    def __init__(self, coin, long, client, log):
+        super().__init__(coin, long, client, log)
 
         BinanceOrders.cancel_all_orders(self)
 
