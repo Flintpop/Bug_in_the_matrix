@@ -107,7 +107,7 @@ class Trade:
 
         percentage_risked_trade = self.percentage_risk_calculation()
         self.log("\n\nThe percentage risked on the trade is wo leverage : " + str(percentage_risked_trade))
-        leverage = self.correct_leverage(percentage_risked_trade, money_divided)
+        leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
         self.log("\nThe leverage is : " + str(leverage))
 
         quantity = (money_traded / self.entry_price) * leverage
@@ -140,14 +140,12 @@ class Trade:
         while leverage * risk_trade * 1.5 >= 100:  # Not tested. Looks to work
             print("\nHigh risk of liquidation ! Reducing leverage...")
             leverage = leverage - ((leverage * 0.1).__round__())
-
         if leverage >= 125:
             print("\nLeverage too high. The platform cannot handle it.")
             leverage = 120
         elif leverage < 1:
-            print("\nLeverage too low !")
+            print("\nLeverage inferior to 1 !")
             leverage = 1
-        print("\nThe leverage is : " + str(leverage))
         return leverage
 
 
