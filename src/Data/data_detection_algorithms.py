@@ -1,32 +1,25 @@
 
 class Core:
     @staticmethod
-    def finder(index, first_indexes, second_indexes, prices, high):
-        temp_high_low = Core.finder_temp(high)
+    def finder(index: int, first_indexes: list, second_indexes: list, prices: list, high: bool):
+        first_index_search = second_indexes[index]
+        temp_high_low = prices[first_index_search]
         temp_index = 0
         i = 0
         limit = len(prices) - 2
-        length = Core.macd_cross_detection(first_indexes, second_indexes[index], limit) - second_indexes[index]
+        length = Core.macd_cross_detection(first_indexes, first_index_search, limit) - first_index_search
 
         while i < length and i <= limit:
-            res = Core.comparator_numbers(high, float(prices[i + second_indexes[index]]), float(temp_high_low))
+            res = Core.comparator_numbers(high, prices[i + first_index_search], temp_high_low)
             if res:
-                temp_high_low = prices[i + second_indexes[index]]
-                temp_index = i + second_indexes[index]
+                temp_high_low = prices[i + first_index_search]
+                temp_index = i + first_index_search
             i += 1
 
         return temp_high_low, temp_index
 
     @staticmethod
-    def finder_temp(high):
-        if high:
-            temp_high_low = 0
-        else:
-            temp_high_low = 1000000
-        return temp_high_low
-
-    @staticmethod
-    def comparator_numbers(boolean, element_one, element_two):
+    def comparator_numbers(boolean: bool, element_one, element_two):
         if boolean:
             res = element_one > element_two
         else:
@@ -34,7 +27,7 @@ class Core:
         return res
 
     @staticmethod
-    def switcher(boolean, first_index, second_index):
+    def switcher(boolean: bool, first_index, second_index):
         if boolean:
             res = first_index, second_index
         else:
@@ -42,7 +35,7 @@ class Core:
         return res
 
     @staticmethod
-    def macd_cross_detection(macd_indexes, value, max_value=2):
+    def macd_cross_detection(macd_indexes: list, value, max_value=2):
         crossed = False
         k = 0
         v = 0
@@ -57,7 +50,7 @@ class Core:
         return v
 
     @staticmethod
-    def indicator_finder(macd_limit, bear, bull, compared, high):  # Not completed; buggy.
+    def indicator_finder(macd_limit, bear: list, bull: list, compared, high: bool):  # Not completed; buggy.
         i = 0
         first_index, second_index = Core.switcher(high, bear, bull)
         list_return = [[], []]

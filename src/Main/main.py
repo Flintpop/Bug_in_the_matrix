@@ -1,4 +1,5 @@
 import time
+import traceback
 
 import datetime as dt
 from binance.client import Client
@@ -12,8 +13,8 @@ from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.0.7
-Date : 19 / 07 / 2021
+Version : 1.0.8
+Date : 29 / 07 / 2021
 """
 #####################################################################################
 
@@ -75,11 +76,7 @@ class Program:
             if self.download_mode:
                 time.sleep(self.wait)
                 self.debug.debug_file()  # Just a debug file that print the last time the bot ran.
-                try:
-                    self.update()  # Update the whole indicators and data to the latest.
-                except Exception as e:
-                    self.debug.logs.add_log(e)
-                    time.sleep(1800)  # Wait 30 minutes.
+                self.update(wait_exception=1800)  # Update the whole indicators and data to the latest.
 
     def short_long_check(self, length_local, low_high_prices_indexes):  # Check if the bot should long or short
         last_self_long = Program.buy_sell(self, low_high_prices_indexes[length_local - 1])
@@ -266,11 +263,18 @@ class Program:
 
         return macd_cross, divergence
 
-    def update(self):
-        self.coin.update_data()
-        self.data = self.coin.data
-        self.list_r = self.coin.list_r
-        self.debug.actualize_data(self.coin)
+    def update(self, wait_exception=20):
+        # Update to the latest price data and indicators related to it.
+        try:
+            self.coin.update_data()
+            self.data = self.coin.data
+            self.list_r = self.coin.list_r
+            self.debug.actualize_data(self.coin)
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.debug.logs.add_log("\n\n" + str(tb))
+            self.debug.logs.add_log("\n\nThe error message is : \n" + str(e))
+            time.sleep(wait_exception)
 
     def check_target(self, stop_loss, take_profit, time_pos_open):
         # See if the position is closed, and if it is lost or won.
