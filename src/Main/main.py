@@ -13,8 +13,8 @@ from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.0.8
-Date : 29 / 07 / 2021
+Version : 1.0.9
+Date : 04 / 08 / 2021
 """
 #####################################################################################
 
@@ -271,10 +271,20 @@ class Program:
             self.list_r = self.coin.list_r
             self.debug.actualize_data(self.coin)
         except Exception as e:
-            tb = traceback.format_exc()
-            self.debug.logs.add_log("\n\n" + str(tb))
+            n = 0
+            wait = wait_exception
+            if wait_exception != 20:
+                wait = wait_exception / 10
+
+            error_msg_connection_reset = 'Connection reset by peer'
+            if str(e) != error_msg_connection_reset:
+                tb = traceback.format_exc()
+                self.debug.logs.add_log("\n\n" + str(tb))
             self.debug.logs.add_log("\n\nThe error message is : \n" + str(e))
-            time.sleep(wait_exception)
+            while n < 10:
+                self.debug.debug_file()
+                time.sleep(wait)
+                n += 1
 
     def check_target(self, stop_loss, take_profit, time_pos_open):
         # See if the position is closed, and if it is lost or won.
