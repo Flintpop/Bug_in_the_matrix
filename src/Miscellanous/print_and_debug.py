@@ -172,9 +172,9 @@ class PrintUser:
     @staticmethod
     def win_loss_string(win):
         if win:
-            res = "win"
+            res = "won"
         else:
-            res = "loss"
+            res = "lost"
         return res
 
     @staticmethod
@@ -183,9 +183,11 @@ class PrintUser:
         word = PrintUser.trade_type_string(long)
 
         send_email(f"<p>Trade completed !</p>"
-                   f"<p>It is a {str(word)}, and the trade is {str(won)}</p>"
+                   f"<p>The trade was a {str(word)}, and it is {str(won)}</p>"
                    f"<p>The entry price is {str(entry_price)} at : {str(time_pos_open)}</p>"
-                   f"<p>The trade was closed at {str(time_pos_hit)} </p>")
+                   f"<p>The trade was closed at {str(time_pos_hit)} </p>",
+                   "Trade results"
+                   )
 
 
 if __name__ == '__main__':

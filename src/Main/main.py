@@ -6,15 +6,15 @@ from binance.client import Client
 
 from src.Main.Trade import Trade, BinanceOrders
 from src.Miscellanous.print_and_debug import PrintUser, LogMaster
-from src.Data.data import HighLowHistory
+from src.Data.High_Low_Data import HighLowHistory
 from data_detection_algorithms import Core
 from src.Miscellanous.security import GetData
 from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.0.9
-Date : 04 / 08 / 2021
+Version : 1.0.10
+Date : 07 / 08 / 2021
 """
 #####################################################################################
 
