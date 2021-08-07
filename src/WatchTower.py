@@ -5,13 +5,12 @@ from email.mime.text import MIMEText
 from time import sleep
 
 
-def send_email(word):
+def send_email(word, subject="Update in your project"):
     port = 587  # For starttls
     smtp_server = "smtp.gmail.com"
     sender_email = 'bestfriendnotifier@gmail.com'
     receiver_email = 'darwho06@gmail.com'
     password = 'azprhcdunwpdtwkz'
-    subject = "Update in your project"
     html = u"""\
     <html>
     <head>
@@ -27,7 +26,7 @@ def send_email(word):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = sender_email
-    msg['To'] = ','.join(receiver_email)
+    msg['To'] = receiver_email
     part = MIMEText(html, 'html')
 
     msg.attach(part)
@@ -55,7 +54,7 @@ if __name__ == '__main__':
         if content == last_content:
             print("\n Bot stopped !")
             stopped = True
-            send_email("Bot stopped !")
+            send_email("Bot stopped !", "Event in the functioning state of the bot")
         else:
             last_content = content
             file.close()
