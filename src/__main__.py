@@ -1,5 +1,4 @@
-from security import GetData, Encrypt
-import time
+from security import GetData
 
 
 def os_path_fix(folder):

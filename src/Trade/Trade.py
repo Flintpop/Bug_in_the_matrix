@@ -1,9 +1,10 @@
 from src.Miscellanous.Settings import Parameters
+from src.Data.High_Low_Data import HighLowHistory
 import time
 
 
 class Trade:
-    def __init__(self, coin, long, client, log):
+    def __init__(self, coin: HighLowHistory, client, log):
         settings = Parameters()
         self.risk_ratio = settings.risk_ratio
         self.risk_per_trade = settings.risk_per_trade_brut
@@ -13,7 +14,7 @@ class Trade:
         self.buffer = settings.buffer
         self.client = client
 
-        self.long = long
+        self.long = coin.long
         self.data = coin.data
         self.study_range = settings.study_range
         self.log = log
@@ -150,8 +151,8 @@ class Trade:
 
 
 class BinanceOrders(Trade):
-    def __init__(self, coin, long, client, log):
-        super().__init__(coin, long, client, log)
+    def __init__(self, coin, client, log):
+        super().__init__(coin, client, log)
 
         BinanceOrders.cancel_all_orders(self)
 
@@ -167,22 +168,6 @@ class BinanceOrders(Trade):
                                   position_side=position_side,
                                   side=side
                                   )
-
-        # Function completely buggy and very weird, returns on leverage 1 but say it's 0 ?.
-        # self.take_profit_recalculation()
-    #
-    # def take_profit_recalculation(self):
-    #     pos_infos = self.client.futures_position_information(symbol="BTCUSDT")
-    #     pos_infos = pos_infos[1]
-    #     self.entry_price = float(pos_infos["entryPrice"])
-    #     self.entry_price = self.entry_price.__round__()
-    #     self.entry_price = int(self.entry_price)
-    #     self.entry_price_index = self.study_range - 1
-    #
-    #     self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
-    #     risk = self.percentage_risk_calculation()
-    #     self.leverage = self.init_leverage(risk)
-    #     self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
 
     def place_sl_and_tp(self):
         BinanceOrders.take_profit_stop_loss(self, "STOP_MARKET", self.stop_loss)

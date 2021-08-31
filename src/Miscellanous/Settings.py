@@ -9,13 +9,15 @@ class Parameters:
         self.study_range = self.data_range - 600
 
         # Trade related
-        self.risk_ratio = 2.2
-        self.risk_per_trade_brut = 16
+        self.risk_ratio = 2
+        self.risk_per_trade_brut = 12
         self.buffer = 0.0002
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100
+        self.wait_after_trade = 240
+        self.wait_after_trade_seconds = self.wait_after_trade * 300
 
         # Detection related
-        self.n_plot_macd = 10
+        self.n_plot_macd = 3
 
         # Miscellaneous
         self.debug_mode = True

@@ -7,6 +7,8 @@ class HighLowHistory(Indicators):
     def __init__(self, client):
         super().__init__(client)
 
+        self.long = None
+
         self.bull_indexes, self.bear_indexes, self.fake_bull_indexes, self.fake_bear_indexes = \
             self.macd_trend_data()
 
@@ -33,7 +35,7 @@ class HighLowHistory(Indicators):
         successive_hist_macd_bear = 0
         successive_hist_macd_bull = 0
 
-        for i in range(self.study_range - 1):
+        for i in range(self.study_range - 1):  # Fake bear and bull indexes
             if last_macd_hist[i] > 0 and fake_macd_trend < 0:
                 fake_bull.append(i)
                 fake_macd_trend = last_macd_hist[i]
@@ -41,7 +43,7 @@ class HighLowHistory(Indicators):
                 fake_bear.append(i)
                 fake_macd_trend = last_macd_hist[i]
 
-            if last_macd_hist[i] > 0 and macd_trend < 0:
+            if last_macd_hist[i] > 0 and macd_trend < 0:  # Bull and bear indexes
                 successive_hist_macd_bear = 0
                 # croise bullish
                 if successive_hist_macd_bull > self.n_plot_macd - 1:
