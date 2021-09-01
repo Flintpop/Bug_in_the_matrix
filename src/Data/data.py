@@ -8,9 +8,9 @@ from src.Miscellanous.Settings import Parameters
 
 
 class Data:
-    def __init__(self, client):
+    def __init__(self, client, symbol):
         settings = Parameters()
-        self.symbol_trade = settings.symbol_trade
+        self.symbol = symbol
         self.client = client
         self.interval_unit = settings.interval_unit
 
@@ -25,13 +25,14 @@ class Data:
             start_min = (self.data_range + 1) * 5
             start_str = str(start_min) + ' minutes ago UTC'
             interval_data = '5m'
+
             data = self.data_download(start_str, interval_data)
 
             return data
 
     def data_download(self, start_str, interval_data):
         data = pd.DataFrame(
-            self.client.futures_historical_klines(symbol=self.symbol_trade, start_str=start_str,
+            self.client.futures_historical_klines(symbol=self.symbol, start_str=start_str,
                                                   interval=interval_data))
 
         data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',

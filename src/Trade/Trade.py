@@ -151,12 +151,12 @@ class Trade:
 
 
 class BinanceOrders(Trade):
-    def __init__(self, coin, client, log):
+    def __init__(self, coin, client, log, symbol):
         super().__init__(coin, client, log)
 
-        BinanceOrders.cancel_all_orders(self)
+        BinanceOrders.cancel_all_orders(self, symbol)
 
-    def init_long_short(self):
+    def open_trade(self, symbol):
         if self.long:
             side = "BUY"
             position_side = "LONG"
@@ -166,34 +166,35 @@ class BinanceOrders(Trade):
 
         BinanceOrders.place_order(self,
                                   position_side=position_side,
-                                  side=side
+                                  side=side,
+                                  symbol=symbol
                                   )
 
-    def place_sl_and_tp(self):
-        BinanceOrders.take_profit_stop_loss(self, "STOP_MARKET", self.stop_loss)
-        BinanceOrders.take_profit_stop_loss(self, "TAKE_PROFIT_MARKET", self.take_profit)
+    def place_sl_and_tp(self, symbol):
+        BinanceOrders.take_profit_stop_loss(self, "STOP_MARKET", self.stop_loss, symbol)
+        BinanceOrders.take_profit_stop_loss(self, "TAKE_PROFIT_MARKET", self.take_profit, symbol)
 
-    def place_order(self, position_side, side):
-        self.client.futures_change_leverage(symbol="BTCUSDT", leverage=str(self.leverage))
+    def place_order(self, position_side, side, symbol):
+        self.client.futures_change_leverage(symbol=symbol, leverage=str(self.leverage))
         time.sleep(4)
         print(self.quantity)
-        self.client.futures_create_order(symbol="BTCUSDT",
+        self.client.futures_create_order(symbol=symbol,
                                          positionSide=position_side,
                                          quantity=self.quantity,
                                          side=side,
                                          type="MARKET",
                                          )
 
-    def cancel_all_orders(self):
-        self.client.futures_cancel_all_open_orders(symbol="BTCUSDT")
+    def cancel_all_orders(self, symbol):
+        self.client.futures_cancel_all_open_orders(symbol=symbol)
 
-    def take_profit_stop_loss(self, type_action, price_stop):
+    def take_profit_stop_loss(self, type_action, price_stop, symbol):
         side = "BUY"
         position_side = "SHORT"
         if self.long:
             side = "SELL"
             position_side = "LONG"
-        self.client.futures_create_order(symbol="BTCUSDT",
+        self.client.futures_create_order(symbol=symbol,
                                          closePosition="true",
                                          type=str(type_action),
                                          stopPrice=str(price_stop),

@@ -6,8 +6,8 @@ from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.1
-Date : 31 / 08 / 2021
+Version : 1.2
+Date : 01 / 09 / 2021
 """
 #####################################################################################
 
@@ -23,6 +23,7 @@ class Program:
         strategy.scan()
     
     @staticmethod
+    # Connect to binance api
     def connect():
         key = GetData.login()
         successful_login = False

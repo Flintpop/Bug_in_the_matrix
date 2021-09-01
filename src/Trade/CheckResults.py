@@ -1,4 +1,4 @@
-from print_and_debug import PrintUser
+from WarnUser import Warn
 from src.Trade.Trade import Trade
 from src.Data.High_Low_Data import HighLowHistory
 
@@ -8,7 +8,7 @@ class TradeResults:
         self.coin = coin
         self.debug = debug_obj
 
-    def check_result(self, binance, log_master):
+    def check_result(self, binance, log_master, symbol):
         time_pos_open = self.debug.get_time(self.coin.study_range - 2)  # When is the trade open
 
         log = self.debug.logs.add_log
@@ -18,13 +18,14 @@ class TradeResults:
             log("\n\n\nTarget hit ! Won ? | " + str(win))
 
             time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
-
-            PrintUser.send_result_email(
+            warn = Warn()
+            warn.send_result_email(
                 long=self.coin.long,
                 entry_price=binance.entry_price,
                 time_pos_hit=time_pos_hit,
                 time_pos_open=time_pos_open,
-                win=win
+                win=win,
+                symbol=symbol
             )
 
             Trade.add_to_trade_history(binance, win, time_pos_open, time_pos_hit, binance.current_balance,

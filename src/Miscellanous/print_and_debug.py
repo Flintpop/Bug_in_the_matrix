@@ -1,6 +1,5 @@
 import datetime as dt
 import pandas as pd
-from src.WatchTower import send_email
 
 # datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
 
@@ -80,15 +79,14 @@ class LogMaster:
 
 class PrintUser:
     def __init__(self, coin_obj):
-        self.debug_file_path = os_path_fix() + "debug_file.txt"
         self.logs_path = os_path_fix() + "logs.txt"
         self.trade_path = os_path_fix() + "TradeHistory.csv"
 
         self.data = coin_obj.data
         self.data_range = coin_obj.data_range
         self.study_range = coin_obj.study_range
-        
-        self.logs = LogMaster()
+
+        self.logs = LogMaster()  # TODO: Potential bug here.
 
     def actualize_data(self, coin):
         self.data = coin.data
@@ -137,14 +135,22 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, sl, tp, entry_price, entry_price_index, long):
+    def debug_trade_parameters(self, sl, tp, entry_price, entry_price_index, long, symbol):
         log = self.logs.add_log
         date = PrintUser.get_time(self, entry_price_index)
 
-        log("\n\n\nIt is a long ? | " + str(long))
-        log("\nThe enter price is : " + str(entry_price) + " at : " + str(date))
-        log("\nThe stop loss is : " + str(sl))
-        log("\nThe take profit is : " + str(tp))
+        log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol} market")
+        log(f"\nThe entry price is : {entry_price} at : {date}")
+        log(f"\nThe stop loss is : {sl}")
+        log(f"\nThe take profit is : {tp}")
+
+    @staticmethod
+    def trade_type_string(long):
+        if long:
+            res = "long"
+        else:
+            res = "short"
+        return res
 
     def get_time(self, index):
         time_print = self.data['open_date_time']
@@ -155,39 +161,6 @@ class PrintUser:
             print(e)
             res = time_print[len(time_print) - 1]
         return res
-
-    def debug_file(self):
-        f = open(self.debug_file_path, "w+")
-        f.write("File created at : " + str(dt.datetime.now()))
-        f.close()
-
-    @staticmethod
-    def trade_type_string(long):
-        if long:
-            res = "long"
-        else:
-            res = "short"
-        return res
-
-    @staticmethod
-    def win_loss_string(win):
-        if win:
-            res = "won"
-        else:
-            res = "lost"
-        return res
-
-    @staticmethod
-    def send_result_email(long, win, entry_price, time_pos_hit, time_pos_open):
-        won = PrintUser.win_loss_string(win)
-        word = PrintUser.trade_type_string(long)
-
-        send_email(f"<p>Trade completed !</p>"
-                   f"<p>The trade was a {str(word)}, and it is {str(won)}</p>"
-                   f"<p>The entry price is {str(entry_price)} at : {str(time_pos_open)}</p>"
-                   f"<p>The trade was closed at {str(time_pos_hit)} </p>",
-                   "Trade results"
-                   )
 
 
 if __name__ == '__main__':

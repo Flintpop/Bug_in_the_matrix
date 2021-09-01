@@ -10,7 +10,7 @@ def send_email(word, subject="Update in your project"):
     smtp_server = "smtp.gmail.com"
     sender_email = 'bestfriendnotifier@gmail.com'
     receiver_email = 'darwho06@gmail.com'
-    password = 'azprhcdunwpdtwkz'
+    password = 'lkkuxirbnhtpcavg'
     html = u"""\
     <html>
     <head>

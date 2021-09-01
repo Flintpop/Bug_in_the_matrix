@@ -4,8 +4,8 @@ from src.Data.data_detection_algorithms import Core
 
 
 class HighLowHistory(Indicators):
-    def __init__(self, client):
-        super().__init__(client)
+    def __init__(self, client, symbol):
+        super().__init__(client, symbol)
 
         self.long = None
 
