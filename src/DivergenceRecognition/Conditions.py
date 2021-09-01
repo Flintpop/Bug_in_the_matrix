@@ -1,13 +1,16 @@
 import datetime
 
+from WarnUser import Warn
 from src.Data.data_detection_algorithms import Core
 from src.Data.High_Low_Data import HighLowHistory
+from src.Miscellanous.print_and_debug import PrintUser
 
 
 class StrategyConditions:
-    def __init__(self, coin: HighLowHistory, debug_obj):
+    def __init__(self, coin: HighLowHistory, debug_obj: PrintUser):
         self.coin = coin
         self.debug = debug_obj
+        self.warn = Warn()
         self.divergence_spotted = False
 
         self.last_high_low_trade_divergence = [0, 0]
@@ -72,13 +75,13 @@ class StrategyConditions:
         return res
 
     def init_trade_final_checking(self):
-        log = self.debug.logs.add_log
+        log = self.warn.logs.add_log
         log("\n\n" + str(datetime.datetime.now()) + " : Has entered trade_final_checking")
         log("\n\nFinal checking procedures, awaiting a macd cross !")
         self.last_high_low_trade_divergence[0] = self.coin.low_local[len(self.coin.low_local) - 1]
         self.last_high_low_trade_divergence[1] = self.coin.high_local[len(self.coin.high_local) - 1]
 
-        self.debug.debug_file()
+        self.warn.debug_file()
 
     def trade_final_checking(self):
         # TODO: trade_final_checking function could be overhauled to reduce the number of lines.
