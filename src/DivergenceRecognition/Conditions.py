@@ -51,13 +51,14 @@ class StrategyConditions:
         return divergence
 
     def is_obsolete(self):
+        # POTENTIAL BUG HERE, be careful.
         if self.coin.long:
             index = self.coin.low_prices_indexes[len(self.coin.low_prices_indexes) - 1]
-            r = Core.macd_cross_detection(self.coin.fake_bear_indexes, index, -5)  # Give True if not crossed; e.a if
+            r = Core.macd_cross_detection(self.coin.bear_indexes, index, -5)  # Give True if not crossed; e.a if
             # the divergence is not obsolete.
         else:
             index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 1]
-            r = Core.macd_cross_detection(self.coin.fake_bull_indexes, index, -5)
+            r = Core.macd_cross_detection(self.coin.bull_indexes, index, -5)
         if r == -5:
             return False
         else:

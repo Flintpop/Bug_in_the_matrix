@@ -25,10 +25,10 @@ class Divergence:
         self.n_coin = len(settings.market_symbol_list)
         self.symbols = settings.market_symbol_list
 
-        for i in range(self.n_coin):
-            self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[i]))
-            self.debug.append(PrintUser(self.coins[i]))
-            self.conditions.append(StrategyConditions(self.coins[i], self.debug))
+        for symbol in range(self.n_coin):
+            self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[symbol]))
+            self.debug.append(PrintUser(self.coins[symbol]))
+            self.conditions.append(StrategyConditions(self.coins[symbol], self.debug[symbol]))
 
         self.log_master = LogMaster()
 
