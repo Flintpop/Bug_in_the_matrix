@@ -27,8 +27,10 @@ class Divergence:
 
         for symbol in range(self.n_coin):
             self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[symbol]))
-            self.debug.append(PrintUser(self.coins[symbol]))
-            self.conditions.append(StrategyConditions(self.coins[symbol], self.debug[symbol]))
+            current_coin = self.coins[symbol]
+            self.debug.append(PrintUser(current_coin))
+            current_debug = self.debug[symbol]
+            self.conditions.append(StrategyConditions(current_coin, current_debug))
 
         self.log_master = LogMaster()
 
@@ -53,6 +55,7 @@ class Divergence:
                 same_trade = self.conditions[symbol].check_not_same_trade()
                 is_obsolete = self.conditions[symbol].is_obsolete()
                 if divergence and not same_trade and not is_obsolete:
+                    self.warn.logs.add_log(f"For {self.debug[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                     self.conditions[symbol].init_trade_final_checking()
                     while not crossed and divergence:
                         crossed, divergence = self.conditions[symbol].trade_final_checking()  # Check the final

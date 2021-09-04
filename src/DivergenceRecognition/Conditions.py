@@ -2,16 +2,15 @@ import datetime
 
 from WarnUser import Warn
 from src.Data.data_detection_algorithms import Core
-from src.Data.High_Low_Data import HighLowHistory
-from src.Miscellanous.print_and_debug import PrintUser
 
 
 class StrategyConditions:
-    def __init__(self, coin: HighLowHistory, debug_obj: PrintUser):
+    def __init__(self, coin, debug_obj):
         self.coin = coin
         self.debug = debug_obj
         self.warn = Warn()
         self.divergence_spotted = False
+        self.log = self.warn.logs.add_log
 
         self.last_high_low_trade_divergence = [0, 0]
 
@@ -94,9 +93,15 @@ class StrategyConditions:
             divergence = self.divergence_spotter()
             if last_30_hist[length] > 0 and divergence and last_30_hist[length-1] < 0:
                 macd_cross = True
-                self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
-                                                 self.coin.fake_bear_indexes,
-                                                 self.coin.fake_bull_indexes)
+                try:
+                    self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
+                                                     self.coin.fake_bear_indexes,
+                                                     self.coin.fake_bull_indexes)
+                except Exception as e:
+                    print(e)
+                    print(self.debug)
+                    print(self.coin.data)
+
             elif last_30_hist[length] > 0 and divergence and last_30_hist[length-1] > 0:
                 divergence = False
                 macd_cross = True
@@ -135,12 +140,12 @@ class StrategyConditions:
             self.coin.long = not self.coin.long
 
     def raise_value_error_msg(self):
-        print("Bug in detecting properly the macd cross.\n")
+        self.log("Bug in detecting properly the macd cross.\n")
 
-        print(f"It was a long ? {self.coin.long}")
-        print(f"Debug data['Hist'] : \n{self.coin.data['Hist']}\n")
+        self.log(f"It was a long ? {self.coin.long}")
+        self.log(f"Debug data['Hist'] : \n{self.coin.data['Hist']}\n")
 
-        print(f'The current coin data is : \n{self.coin.data.tail(30)}')
+        self.log(f'The current coin data is : \n{self.coin.data.tail(30)}')
 
         # raise ValueError
 

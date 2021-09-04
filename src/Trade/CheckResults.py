@@ -19,13 +19,14 @@ class TradeResults:
 
             time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
             warn = Warn()
+            symbol_word = self.debug.get_current_trade_symbol(symbol_index=symbol)
             warn.send_result_email(
                 long=self.coin.long,
                 entry_price=binance.entry_price,
                 time_pos_hit=time_pos_hit,
                 time_pos_open=time_pos_open,
                 win=win,
-                symbol=symbol
+                symbol=symbol_word
             )
 
             Trade.add_to_trade_history(binance, win, time_pos_open, time_pos_hit, binance.current_balance,

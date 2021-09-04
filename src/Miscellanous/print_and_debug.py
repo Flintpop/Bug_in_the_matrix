@@ -1,5 +1,6 @@
 import datetime as dt
 import pandas as pd
+from src.Miscellanous.Settings import Parameters
 
 # datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
 
@@ -85,6 +86,7 @@ class PrintUser:
         self.data = coin_obj.data
         self.data_range = coin_obj.data_range
         self.study_range = coin_obj.study_range
+        self.settings = Parameters()
 
         self.logs = LogMaster()  # TODO: Potential bug here.
 
@@ -131,7 +133,7 @@ class PrintUser:
     def debug_divergence_finder(self, indexes, i, word):
         string_one = PrintUser.get_time(self, indexes[i])
         string_two = PrintUser.get_time(self, indexes[i + 1])
-        
+
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
@@ -143,6 +145,9 @@ class PrintUser:
         log(f"\nThe entry price is : {entry_price} at : {date}")
         log(f"\nThe stop loss is : {sl}")
         log(f"\nThe take profit is : {tp}")
+
+    def get_current_trade_symbol(self, symbol_index):
+        return self.settings.market_symbol_list[symbol_index]
 
     @staticmethod
     def trade_type_string(long):
