@@ -92,8 +92,9 @@ class Divergence:
         log("\nTrade orders calculated.")
 
         log("\nInitiating binance procedures...")
-        binance.open_trade(symbol=symbol)
-        binance.place_sl_and_tp(symbol=symbol)
+        # string_symbol = self.debug[symbol].get_current_trade_symbol(symbol_index=symbol)
+        # binance.open_trade(symbol=string_symbol)
+        # binance.place_sl_and_tp(symbol=string_symbol)
         log("\nOrders placed and position open !")
         # Just print all the trade informations and add it to the log file.
         PrintUser.debug_trade_parameters(

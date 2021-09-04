@@ -57,10 +57,10 @@ class TradeResults:
                     target_hit = True
                     win = True
             else:
-                if float(high_wicks[len_high]) > stop_loss:  # Above SL
+                if float(high_wicks[len_high]) >= stop_loss:  # Above SL
                     target_hit = True
                     win = False
-                elif float(low_wicks[len_low]) < take_profit:  # Below TP
+                elif float(low_wicks[len_low]) <= take_profit:  # Below TP
                     target_hit = True
                     win = True
 
