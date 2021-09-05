@@ -93,14 +93,7 @@ class StrategyConditions:
             divergence = self.divergence_spotter()
             if last_30_hist[length] > 0 and divergence and last_30_hist[length-1] < 0:
                 macd_cross = True
-                try:
-                    self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
-                                                     self.coin.fake_bear_indexes,
-                                                     self.coin.fake_bull_indexes)
-                except Exception as e:
-                    print(e)
-                    print(self.debug)
-                    print(self.coin.data)
+                self.try_debug_macd_trend()
 
             elif last_30_hist[length] > 0 and divergence and last_30_hist[length-1] > 0:
                 divergence = False
@@ -111,15 +104,23 @@ class StrategyConditions:
             divergence = self.divergence_spotter()
             if last_30_hist[length] < 0 and divergence and last_30_hist[length-1] > 0:
                 macd_cross = True
-                self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
-                                                 self.coin.fake_bear_indexes,
-                                                 self.coin.fake_bull_indexes)
+                self.try_debug_macd_trend()
             elif last_30_hist[length] < 0 and divergence and last_30_hist[length-1] < 0:
                 divergence = False
                 macd_cross = True
                 self.raise_value_error_msg()
 
         return macd_cross, divergence
+
+    def try_debug_macd_trend(self):
+        try:
+            self.debug.debug_macd_trend_data(self.coin.bull_indexes, self.coin.bear_indexes,
+                                             self.coin.fake_bear_indexes,
+                                             self.coin.fake_bull_indexes)
+        except Exception as e:
+            print(e)
+            print(self.debug)
+            print(self.coin.data)
 
     def buy_sell(self, index):
         ema_trend = self.coin.ema_trend.tail(self.coin.study_range).values

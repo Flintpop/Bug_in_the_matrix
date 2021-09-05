@@ -19,7 +19,7 @@ class Divergence:
 
         self.debug_mode = settings.debug_mode
         self.coins = []
-        self.debug = []
+        self.debugs = []
         self.conditions = []
 
         self.n_coin = len(settings.market_symbol_list)
@@ -28,8 +28,8 @@ class Divergence:
         for symbol in range(self.n_coin):
             self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[symbol]))
             current_coin = self.coins[symbol]
-            self.debug.append(PrintUser(current_coin))
-            current_debug = self.debug[symbol]
+            self.debugs.append(PrintUser(current_coin))
+            current_debug = self.debugs[symbol]
             self.conditions.append(StrategyConditions(current_coin, current_debug))
 
         self.log_master = LogMaster()
@@ -55,7 +55,7 @@ class Divergence:
                 same_trade = self.conditions[symbol].check_not_same_trade()
                 is_obsolete = self.conditions[symbol].is_obsolete()
                 if divergence and not same_trade and not is_obsolete:
-                    self.warn.logs.add_log(f"For {self.debug[symbol].get_current_trade_symbol(symbol_index=symbol)}")
+                    self.warn.logs.add_log(f"For {self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                     self.conditions[symbol].init_trade_final_checking()
                     while not crossed and divergence:
                         crossed, divergence = self.conditions[symbol].trade_final_checking()  # Check the final
@@ -74,8 +74,8 @@ class Divergence:
         log = self.warn.logs.add_log
         self.divergence_spotted = False
         log(self.coins[symbol].data)
-        self.debug[symbol].actualize_data(self.coins[symbol])
-        string_symbol = self.debug[symbol].get_current_trade_symbol(symbol_index=symbol)
+        self.debugs[symbol].actualize_data(self.coins[symbol])
+        string_symbol = self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)
 
         log("\n\n\nInitiating trade procedures...")
 
@@ -98,7 +98,7 @@ class Divergence:
         log("\nOrders placed and position open !")
         # Just print all the trade informations and add it to the log file.
         PrintUser.debug_trade_parameters(
-            self=self.debug[symbol],
+            self=self.debugs[symbol],
             long=self.coins[symbol].long,
             sl=binance.stop_loss,
             tp=binance.take_profit,
@@ -107,7 +107,7 @@ class Divergence:
             symbol=symbol
         )
 
-        trade_results = TradeResults(self.coins[symbol], self.debug)
+        trade_results = TradeResults(self.coins[symbol], self.debugs)
 
         while binance.trade_in_going:
             res = trade_results.check_result(binance, self.log_master, symbol=symbol)
@@ -117,7 +117,7 @@ class Divergence:
                 time.sleep(self.settings.wait_after_trade_seconds)
             else:
                 self.update(symbol)
-                trade_results.update(self.coins[symbol], self.debug)
+                trade_results.update(self.coins[symbol], self.debugs)
 
     def update(self, symbol, update_type="", wait_exception=20):
         if update_type == "fast":
@@ -128,8 +128,8 @@ class Divergence:
         # Update to the latest price data and indicators related to it.
         try:
             self.coins[symbol].update_data()
-            self.debug[symbol].actualize_data(self.coins[symbol])
-            self.conditions[symbol].actualize_data(coin=self.coins[symbol], debug_obj=self.debug)
+            self.debugs[symbol].actualize_data(self.coins[symbol])
+            self.conditions[symbol].actualize_data(coin=self.coins[symbol], debug_obj=self.debugs[symbol])
         except Exception as e:
             n = 0
             wait = wait_exception
