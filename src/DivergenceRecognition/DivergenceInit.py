@@ -75,6 +75,7 @@ class Divergence:
         self.divergence_spotted = False
         log(self.coins[symbol].data)
         self.debug[symbol].actualize_data(self.coins[symbol])
+        string_symbol = self.debug[symbol].get_current_trade_symbol(symbol_index=symbol)
 
         log("\n\n\nInitiating trade procedures...")
 
@@ -85,14 +86,13 @@ class Divergence:
             coin=self.coins[symbol],
             client=self.client,
             log=self.warn.logs.add_log,
-            symbol=symbol
+            symbol=string_symbol
         )
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()
         log("\nTrade orders calculated.")
 
         log("\nInitiating binance procedures...")
-        # string_symbol = self.debug[symbol].get_current_trade_symbol(symbol_index=symbol)
         # binance.open_trade(symbol=string_symbol)
         # binance.place_sl_and_tp(symbol=string_symbol)
         log("\nOrders placed and position open !")
