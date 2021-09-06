@@ -104,10 +104,10 @@ class Divergence:
             tp=binance.take_profit,
             entry_price=binance.entry_price,
             entry_price_index=self.coins[symbol].study_range - 2,
-            symbol=symbol
+            symbol=string_symbol
         )
 
-        trade_results = TradeResults(self.coins[symbol], self.debugs)
+        trade_results = TradeResults(self.coins[symbol], self.debugs[symbol])
 
         while binance.trade_in_going:
             res = trade_results.check_result(binance, self.log_master, symbol=symbol)
