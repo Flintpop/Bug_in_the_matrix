@@ -44,7 +44,7 @@ class Divergence:
         self.wait = 285
         self.fast_wait = 5
 
-        self.warn.logs.add_log("Bot initialized !")
+        self.warn.logs.add_log("\n\nBot initialized !")
 
     def scan(self):
         crossed = False
@@ -55,14 +55,17 @@ class Divergence:
                 same_trade = self.conditions[symbol].check_not_same_trade()
                 is_obsolete = self.conditions[symbol].is_obsolete()
                 if divergence and not same_trade and not is_obsolete:
-                    self.warn.logs.add_log(f"For {self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
+                    self.warn.logs.add_log(f"\n\nFor "
+                                           f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                     self.conditions[symbol].init_trade_final_checking()
+
                     while not crossed and divergence:
                         crossed, divergence = self.conditions[symbol].trade_final_checking()  # Check the final
                         # indicators compliance.
-                        self.update(symbol, update_type="fast")
                     if crossed and divergence:
                         self.init_trade(symbol)
+                    elif not crossed and divergence:
+                        self.update(symbol, update_type="fast")
                     else:
                         self.warn.logs.add_log(f"\nTrade cancelled on {self.symbols[symbol]}!")
 
@@ -117,7 +120,7 @@ class Divergence:
                 time.sleep(self.settings.wait_after_trade_seconds)
             else:
                 self.update(symbol)
-                trade_results.update(self.coins[symbol], self.debugs)
+                trade_results.update(self.coins[symbol], self.debugs[symbol])
 
     def update(self, symbol, update_type="", wait_exception=20):
         if update_type == "fast":

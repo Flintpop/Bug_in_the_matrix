@@ -65,3 +65,7 @@ class TradeResults:
                     win = True
 
         return win, target_hit
+
+    def update(self, coin, debug):
+        self.coin = coin
+        self.debug = debug
