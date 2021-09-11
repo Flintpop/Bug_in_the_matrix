@@ -47,25 +47,24 @@ class Divergence:
         self.warn.logs.add_log("\n\nBot initialized !")
 
     def scan(self):
-        crossed = False
         while True:
+            crossed = False
             # Spots divergence, then checks if it is not the same it was used.
             for symbol in range(self.n_coin):
                 divergence = self.conditions[symbol].divergence_spotter()
                 same_trade = self.conditions[symbol].check_not_same_trade()
                 is_obsolete = self.conditions[symbol].is_obsolete()
                 if divergence and not same_trade and not is_obsolete:
-                    self.warn.logs.add_log(f"\n\nFor "
+                    self.warn.logs.add_log(f"\nFor "
                                            f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                     self.conditions[symbol].init_trade_final_checking()
 
                     while not crossed and divergence:
+                        self.update(symbol, update_type="fast")
                         crossed, divergence = self.conditions[symbol].trade_final_checking()  # Check the final
                         # indicators compliance.
                     if crossed and divergence:
                         self.init_trade(symbol)
-                    elif not crossed and divergence:
-                        self.update(symbol, update_type="fast")
                     else:
                         self.warn.logs.add_log(f"\nTrade cancelled on {self.symbols[symbol]}!")
 
@@ -111,9 +110,10 @@ class Divergence:
         )
 
         trade_results = TradeResults(self.coins[symbol], self.debugs[symbol])
+        time_pos_open = self.debugs[symbol].get_time(self.coins[symbol].study_range - 2)  # When is the trade open
 
         while binance.trade_in_going:
-            res = trade_results.check_result(binance, self.log_master, symbol=symbol)
+            res = trade_results.check_result(binance, self.log_master, symbol=symbol, time_pos_open=time_pos_open)
 
             if res:
                 binance.trade_in_going = False
@@ -130,9 +130,10 @@ class Divergence:
         self.warn.debug_file()
         # Update to the latest price data and indicators related to it.
         try:
-            self.coins[symbol].update_data()
-            self.debugs[symbol].actualize_data(self.coins[symbol])
-            self.conditions[symbol].actualize_data(coin=self.coins[symbol], debug_obj=self.debugs[symbol])
+            self.coins[symbol] = self.coins[symbol].update_data()
+            self.debugs[symbol] = self.debugs[symbol].actualize_data(self.coins[symbol])
+            self.conditions[symbol] = self.conditions[symbol].actualize_data(coin=self.coins[symbol],
+                                                                             debug_obj=self.debugs[symbol])
         except Exception as e:
             n = 0
             wait = wait_exception
@@ -143,7 +144,7 @@ class Divergence:
             if str(e) != error_msg_connection_reset:
                 tb = traceback.format_exc()
                 self.warn.logs.add_log("\n\n" + str(tb))
-            self.warn.logs.add_log("\n\nThe error message is : \n" + str(e))
+                raise SystemError
             while n < 10:  # This code to avoid WatchTower sending false positive mails.
                 self.warn.debug_file()
                 time.sleep(wait)

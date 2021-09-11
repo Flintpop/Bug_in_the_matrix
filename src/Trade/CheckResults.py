@@ -8,8 +8,7 @@ class TradeResults:
         self.coin = coin
         self.debug = debug_obj
 
-    def check_result(self, binance, log_master, symbol):
-        time_pos_open = self.debug.get_time(self.coin.study_range - 2)  # When is the trade open
+    def check_result(self, binance, log_master, symbol, time_pos_open):
 
         log = self.debug.logs.add_log
         win, target_hit = self.check_target(binance.stop_loss, binance.take_profit, time_pos_open)

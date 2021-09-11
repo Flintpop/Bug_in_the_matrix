@@ -48,14 +48,3 @@ class Core:
         except IndexError:
             v = max_value
         return v
-
-    @staticmethod
-    def indicator_finder(macd_limit, bear: list, bull: list, compared, high: bool):  # Not completed; buggy.
-        i = 0
-        first_index, second_index = Core.switcher(high, bear, bull)
-        list_return = [[], []]
-        while i < macd_limit:
-            temp_high_low, temp_index = Core.finder(i, first_index, second_index, compared, high)
-            list_return[0].append(temp_high_low)
-            list_return[1].append(temp_index)
-        return list_return

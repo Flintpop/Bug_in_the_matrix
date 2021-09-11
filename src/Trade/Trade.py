@@ -1,5 +1,7 @@
+from WarnUser import Warn
 from src.Miscellanous.Settings import Parameters
 from src.Data.High_Low_Data import HighLowHistory
+import datetime
 import time
 
 
@@ -10,6 +12,7 @@ class Trade:
         self.risk_per_trade = settings.risk_per_trade_brut
         self.risk_per_trade_brut = self.risk_per_trade
         self.risk_per_trade = 1 - self.risk_per_trade / 100
+        self.warn = Warn()
 
         self.buffer = settings.buffer
         self.client = client
@@ -78,18 +81,14 @@ class Trade:
             stop_loss = float(self.high_wicks[high_l]) + buffer
         print("The stop loss is : " + str(stop_loss))
         stop_loss.__round__()
-        self.log("\n\nLong, high wicks and low_wicks and data : \n")
-        self.log(self.long)
-        self.log("\n")
-        self.log(self.high_wicks)
-        self.log("\n")
-        self.log(self.low_wicks)
-        self.log("\n")
-        self.log(self.data)
-        self.log("\n")
+
         if (stop_loss > self.entry_price and self.long) or (stop_loss < self.entry_price and not self.long):
-            raise print("Fatal error, could not calculate properly the stop loss; due likely to self.high/low_wicks "
-                        "to not be correct.")
+            self.log("Fatal error, could not calculate properly the stop loss; due likely to self.high/low_wicks "
+                     "to not be correct.")
+            long_word = self.warn.trade_type_string(self.long)
+            self.log(f"It was a {long_word}\n High wicks : {self.high_wicks}\n Low wicks : {self.low_wicks}\n"
+                     f"Data : \n{self.data}\n At : {datetime.datetime.now()}\n")
+            raise ValueError
         return int(stop_loss)
 
     def add_to_trade_history(self, win, time_pos_open, time_pos_hit, money, debug):

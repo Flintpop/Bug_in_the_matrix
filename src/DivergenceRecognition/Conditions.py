@@ -38,26 +38,17 @@ class StrategyConditions:
         if self.coin.long and word == 'long' or not self.coin.long and word == 'short':
             divergence = Core.comparator_numbers(self.coin.long, local[len(local) - 2], local[len(local) - 1]) \
                      and Core.comparator_numbers(self.coin.long, macd[len(macd) - 1], macd[len(macd) - 2])
-            # if divergence:
-            #     if self.debug_mode and not self.divergence_spotted:
-            #         self.debug.debug_divergence_finder(indexes, len(local) - 2, word)
-            #         log("\n\n\nDebug; self.data, local and macd lists.")
-            #         log(self.coin.data)
-            #         log(local)
-            #         log(macd)
-            #         self.divergence_spotted = True
 
         return divergence
 
     def is_obsolete(self):
-        # POTENTIAL BUG HERE, be careful.
         if self.coin.long:
             index = self.coin.low_prices_indexes[len(self.coin.low_prices_indexes) - 1]
-            r = Core.macd_cross_detection(self.coin.bear_indexes, index, -5)  # Give True if not crossed; e.a if
+            r = Core.macd_cross_detection(self.coin.fake_bear_indexes, index, -5)  # Give True if not crossed; e.a if
             # the divergence is not obsolete.
         else:
             index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 1]
-            r = Core.macd_cross_detection(self.coin.bull_indexes, index, -5)
+            r = Core.macd_cross_detection(self.coin.fake_bull_indexes, index, -5)
         if r == -5:
             return False
         else:
@@ -77,7 +68,7 @@ class StrategyConditions:
     def init_trade_final_checking(self):
         log = self.warn.logs.add_log
         log("\n\n" + str(datetime.datetime.now()) + " : Has entered trade_final_checking")
-        log("\n\nFinal checking procedures, awaiting a macd cross !")
+        log("\nFinal checking procedures, awaiting a macd cross !")
         self.last_high_low_trade_divergence[0] = self.coin.low_local[len(self.coin.low_local) - 1]
         self.last_high_low_trade_divergence[1] = self.coin.high_local[len(self.coin.high_local) - 1]
 
@@ -141,12 +132,12 @@ class StrategyConditions:
             self.coin.long = not self.coin.long
 
     def raise_value_error_msg(self):
-        self.log("Bug in detecting properly the macd cross.\n")
+        self.log("\n\nBug in detecting properly the macd cross.\n")
 
-        self.log(f"It was a long ? {self.coin.long}")
-        self.log(f"Debug data['Hist'] : \n{self.coin.data['Hist']}\n")
+        self.log(f"\nIt was a long ? {self.coin.long}")
+        self.log(f"\nDebug data['Hist'] : \n{self.coin.data['Hist']}\n")
 
-        self.log(f'The current coin data is : \n{self.coin.data.tail(30)}')
+        self.log(f'\nThe current coin data is : \n{self.coin.data.tail(30)}')
 
         # raise ValueError
 
