@@ -130,21 +130,16 @@ class Divergence:
         self.warn.debug_file()
         # Update to the latest price data and indicators related to it.
         try:
-            self.coins[symbol] = self.coins[symbol].update_data()
-            self.debugs[symbol] = self.debugs[symbol].actualize_data(self.coins[symbol])
-            self.conditions[symbol] = self.conditions[symbol].actualize_data(coin=self.coins[symbol],
-                                                                             debug_obj=self.debugs[symbol])
+            self.coins[symbol].update_data()
+            self.debugs[symbol].actualize_data(self.coins[symbol])
+            self.conditions[symbol].actualize_data(coin=self.coins[symbol], debug_obj=self.debugs[symbol])
         except Exception as e:
+            self.warn.logs.add_log(f'\n\nWARNING : \n{e}\n\n')
             n = 0
             wait = wait_exception
             if wait_exception != 20:
                 wait = wait_exception / 10
 
-            error_msg_connection_reset = 'Connection reset by peer'
-            if str(e) != error_msg_connection_reset:
-                tb = traceback.format_exc()
-                self.warn.logs.add_log("\n\n" + str(tb))
-                raise SystemError
             while n < 10:  # This code to avoid WatchTower sending false positive mails.
                 self.warn.debug_file()
                 time.sleep(wait)
