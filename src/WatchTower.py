@@ -9,7 +9,7 @@ def send_email(word, subject="Update in your project"):
     port = 587  # For starttls
     smtp_server = "smtp.gmail.com"
     sender_email = 'bestfriendnotifier@gmail.com'
-    receiver_email = 'darwho06@gmail.com'
+    receiver_email = 'bestfriendnotifier@gmail.com'
     password = 'lkkuxirbnhtpcavg'
     html = u"""\
     <html>

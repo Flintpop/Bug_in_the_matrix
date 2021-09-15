@@ -7,7 +7,7 @@ from src.Miscellanous.Settings import Parameters
 #####################################################################################
 """
 Version : 1.2b
-Date : 11 / 09 / 2021
+Date : 15 / 09 / 2021
 """
 #####################################################################################
 
@@ -17,12 +17,12 @@ class Program:
         # Get the decryption key
         self.client = self.connect()
         settings = Parameters()
-        
+
         strategy = Divergence(client=self.client, settings=settings)
         strategy.scan()
-    
-    @staticmethod
+
     # Connect to binance api
+    @staticmethod
     def connect():
         key = GetData.login()
         successful_login = False
