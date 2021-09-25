@@ -27,9 +27,10 @@ class TradeResults:
                 win=win,
                 symbol=symbol_word
             )
+            trade_type_string = warn.trade_type_string(self.coin.long)
 
-            Trade.add_to_trade_history(binance, win, time_pos_open, time_pos_hit, binance.current_balance,
-                                       log_master)
+            Trade.add_to_trade_history(binance, symbol_word, trade_type_string, win, time_pos_open, time_pos_hit,
+                                       binance.current_balance, log_master)
             return True
         return False
 

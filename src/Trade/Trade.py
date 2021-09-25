@@ -20,6 +20,7 @@ class Trade:
         self.long = coin.long
         self.data = coin.data
         self.study_range = settings.study_range
+        self.fees = settings.fees
         self.log = log
 
         self.high_wicks, self.high_wicks_indexes = coin.list_r[2], coin.list_r[3]
@@ -91,14 +92,19 @@ class Trade:
             raise ValueError
         return int(stop_loss)
 
-    def add_to_trade_history(self, win, time_pos_open, time_pos_hit, money, debug):
+    def add_to_trade_history(self, symbol, trade_type, win, time_pos_open, time_pos_hit, money, debug):
+        end_money = money
         if win:
-            end_money = money * (1 + (self.risk_per_trade_brut / 100 * self.risk_ratio))
+            end_money = end_money - (end_money * self.fees * self.leverage)
+            end_money = end_money * (1 + (1 - self.risk_per_trade_brut) * self.risk_ratio)
+            end_money = end_money - (end_money * self.fees * self.leverage)
             win = 1
         else:
-            end_money = money * self.risk_per_trade
+            end_money = end_money - (end_money * self.fees * self.leverage)
+            end_money = end_money * self.risk_per_trade
+            end_money = end_money - (end_money * self.fees * self.leverage)
             win = 0
-        datas = [[win, time_pos_open, time_pos_hit, money, end_money]]
+        datas = [[symbol, trade_type, win, time_pos_open, time_pos_hit, money, end_money]]
         debug.append_trade_history(datas)
 
     def quantity_calculator(self, money_available):

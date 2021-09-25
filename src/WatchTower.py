@@ -3,6 +3,7 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from time import sleep
+import datetime
 
 
 def send_email(word, subject="Update in your project"):
@@ -40,22 +41,35 @@ def send_email(word, subject="Update in your project"):
         server.sendmail(sender_email, receiver_email, msg.as_string())
 
 
-if __name__ == '__main__':
-    wait = 600
-    print("WatchTowerLaunched !")
-    stopped = False
-    f = open("Output/debug_file.txt", "r")
-    last_content = f.read()
-    f.close()
-    sleep(wait)
-    while not stopped:
-        file = open("Output/debug_file.txt", "r")
-        content = file.read()
+class Watch:
+    def __init__(self):
+        self.wait = 600
+        print("WatchTowerLaunched !")
+        self.file = open("Output/debug_file.txt", "r")
+        self.watch_tower()
+
+    def watch_tower(self):
+        stopped = False
+        last_content = self.file.read()
+        self.file.close()
+        sleep(self.wait)
+        while not stopped:
+            self.file = open("Output/debug_file.txt", "r")
+            content = self.file.read()
+            stopped = self.check_bot_response(content=content, last_content=last_content)
+            last_content = content
+            self.file.close()
+
+    def check_bot_response(self, content, last_content):
+        # Todo: Find a way to make it print traceback of errors to save time.
         if content == last_content:
             print("\n Bot stopped !")
-            stopped = True
-            send_email("Bot stopped !", "Event in the functioning state of the bot")
+            send_email(f"The bot stopped at : {datetime.datetime.now()}", "Bot stopped !")
+            return True
         else:
-            last_content = content
-            file.close()
-            sleep(wait)
+            sleep(self.wait)
+            return False
+
+
+if __name__ == '__main__':
+    Watch()

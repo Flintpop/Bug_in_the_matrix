@@ -1,8 +1,11 @@
 import datetime as dt
+import time
+
 import pandas as pd
 from src.Miscellanous.Settings import Parameters
 
-# datas = [[1, '2021-06-16 00:20:00', 104.96, 119.6544]] the data has to be this way.
+# the data has to be this way :
+# datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', 104.96, 119.6544]]
 
 
 def os_path_fix():
@@ -26,13 +29,15 @@ class LogMaster:
             print("An error occurred")
             print(e)
             self.init_trade_history()
+            time.sleep(3)
             print("Trade history initialized")
             self.trade_data = self.get_data()
 
     @staticmethod
     def init_trade_history():
-        df = pd.DataFrame(columns=['win_loss', 'trade_enter_time', 'trade_close_time', 'money_traded', 'result_money'])
-        df.to_csv('TradeHistory.csv', index=False)
+        df = pd.DataFrame(columns=['symbol', 'trade_type', 'win_loss', 'trade_enter_time', 'trade_close_time',
+                                   'money_traded', 'result_money'])
+        df.to_csv('src/Output/TradeHistory.csv', index=False)
 
     def init_log(self):
         f = open(self.logs_path, "w+")
@@ -69,9 +74,9 @@ class LogMaster:
 
     def append_trade_history(self, list_of_results: list):
         self.trade_data = self.get_data()
-        list_of_results = pd.DataFrame(data=list_of_results, columns=['win_loss', 'trade_enter_time',
-                                                                      'trade_close_time', 'money_traded',
-                                                                      'result_money'])
+        list_of_results = pd.DataFrame(data=list_of_results, columns=['symbol', 'trade_type', 'win_loss',
+                                                                      'trade_enter_time', 'trade_close_time',
+                                                                      'money_traded', 'result_money'])
         frames = [self.trade_data, list_of_results]
         self.trade_data = pd.concat(frames, ignore_index=True)
         self.trade_data.to_csv(self.trade_path, index=False)
@@ -170,4 +175,3 @@ class PrintUser:
 
 if __name__ == '__main__':
     a = LogMaster()
-    a.add_log(0 > 1)

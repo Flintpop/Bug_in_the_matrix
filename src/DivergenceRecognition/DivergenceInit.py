@@ -90,6 +90,7 @@ class Divergence:
             log=self.warn.logs.add_log,
             symbol=string_symbol
         )
+        binance.trade_in_going = True
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()
         log("\nTrade orders calculated.")
@@ -121,6 +122,11 @@ class Divergence:
             else:
                 self.update(symbol)
                 trade_results.update(self.coins[symbol], self.debugs[symbol])
+        self.update_all("fast")
+
+    def update_all(self, update_type=""):
+        for symbol in self.symbols:
+            self.update(symbol, update_type)
 
     def update(self, symbol, update_type="", wait_exception=20):
         if update_type == "fast":

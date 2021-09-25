@@ -6,8 +6,8 @@ from src.Miscellanous.Settings import Parameters
 
 #####################################################################################
 """
-Version : 1.2b
-Date : 15 / 09 / 2021
+Version : 1.2
+Date : 25 / 09 / 2021
 """
 #####################################################################################
 
@@ -18,8 +18,8 @@ class Program:
         self.client = self.connect()
         settings = Parameters()
 
-        strategy = Divergence(client=self.client, settings=settings)
-        strategy.scan()
+        macd_divergence = Divergence(client=self.client, settings=settings)
+        macd_divergence.scan()
 
     # Connect to binance api
     @staticmethod
