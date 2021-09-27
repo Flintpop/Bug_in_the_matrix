@@ -4,7 +4,7 @@ class Parameters:
 
         # Data related
         self.interval_unit = '5T'
-        self.data_range = 950  # Min is 600 cuz ema.
+        self.data_range = 900  # Min is 600 cuz ema.
         self.study_range = self.data_range - 600
 
         # Trade related

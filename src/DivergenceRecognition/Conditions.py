@@ -141,6 +141,37 @@ class StrategyConditions:
 
         # raise ValueError
 
+    def macd_line_checker(self):
+        last_macd_data = self.coin.data['MACD'].values
+        # Maybe I have to specify dtype
+        if self.coin.long:
+            index = self.coin.low_prices_indexes[len(self.coin.low_prices_indexes) - 2]
+            length, start = self.calculate_length_and_start(self.coin.bull_indexes, self.coin.bear_indexes, index)
+        else:
+            index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 2]
+            length, start = self.calculate_length_and_start(self.coin.bear_indexes, self.coin.bull_indexes, index)
+
+        res = True
+        i = 0
+
+        while res and i < length:
+            if self.coin.long and last_macd_data[i + start] > 0:
+                res = False
+            elif not self.coin.long and last_macd_data[i + start] < 0:
+                res = False
+            i += 1
+
+        return res
+
+    @staticmethod
+    def calculate_length_and_start(a, b, index):
+        start = Core.macd_cross_detection(a, index)
+        end = Core.macd_cross_detection(b, start)
+
+        length = end - start
+
+        return length, start
+
     def actualize_data(self, coin, debug_obj):
         self.coin = coin
         self.debug = debug_obj

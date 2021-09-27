@@ -1,5 +1,4 @@
 import time
-import traceback
 
 from WarnUser import Warn
 from print_and_debug import PrintUser, LogMaster
@@ -24,6 +23,7 @@ class Divergence:
 
         self.n_coin = len(settings.market_symbol_list)
         self.symbols = settings.market_symbol_list
+        self.macd_line_mode = settings.macd_line_mode
 
         for symbol in range(self.n_coin):
             self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[symbol]))
@@ -64,20 +64,25 @@ class Divergence:
                         crossed, divergence = self.conditions[symbol].trade_final_checking()  # Check the final
                         # indicators compliance.
                     if crossed and divergence:
-                        self.init_trade(symbol)
+                        if self.macd_line_mode:
+                            good_macd_pos = self.conditions[symbol].macd_line_checker()
+                        else:
+                            good_macd_pos = True
+                        if good_macd_pos:
+                            self.init_trade(symbol)
                     else:
                         self.warn.logs.add_log(f"\nTrade cancelled on {self.symbols[symbol]}!")
 
                 if self.download_mode:
                     self.update(symbol, wait_exception=1800)  # Update indicators and data.
 
-    def init_trade(self, symbol):
+    def init_trade(self, index_symbol):
         self.warn.debug_file()
         log = self.warn.logs.add_log
         self.divergence_spotted = False
-        log(self.coins[symbol].data)
-        self.debugs[symbol].actualize_data(self.coins[symbol])
-        string_symbol = self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)
+        log(f"\n{self.coins[index_symbol].data}")
+        self.debugs[index_symbol].actualize_data(self.coins[index_symbol])
+        string_symbol = self.debugs[index_symbol].get_current_trade_symbol(symbol_index=index_symbol)
 
         log("\n\n\nInitiating trade procedures...")
 
@@ -85,12 +90,11 @@ class Divergence:
         # chosen per trade and other parameters. This class contains also all the methods related to actually open a
         # position and open orders.
         binance = BinanceOrders(
-            coin=self.coins[symbol],
+            coin=self.coins[index_symbol],
             client=self.client,
             log=self.warn.logs.add_log,
             symbol=string_symbol
         )
-        binance.trade_in_going = True
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()
         log("\nTrade orders calculated.")
@@ -101,34 +105,35 @@ class Divergence:
         log("\nOrders placed and position open !")
         # Just print all the trade informations and add it to the log file.
         PrintUser.debug_trade_parameters(
-            self=self.debugs[symbol],
-            long=self.coins[symbol].long,
+            self=self.debugs[index_symbol],
+            long=self.coins[index_symbol].long,
             sl=binance.stop_loss,
             tp=binance.take_profit,
             entry_price=binance.entry_price,
-            entry_price_index=self.coins[symbol].study_range - 2,
+            entry_price_index=self.coins[index_symbol].study_range - 2,
             symbol=string_symbol
         )
 
-        trade_results = TradeResults(self.coins[symbol], self.debugs[symbol])
-        time_pos_open = self.debugs[symbol].get_time(self.coins[symbol].study_range - 2)  # When is the trade open
+        trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
+
+        time_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
 
         while binance.trade_in_going:
-            res = trade_results.check_result(binance, self.log_master, symbol=symbol, time_pos_open=time_pos_open)
+            res = trade_results.check_result(binance, self.log_master, symbol=index_symbol, time_pos_open=time_pos_open)
 
             if res:
                 binance.trade_in_going = False
                 time.sleep(self.settings.wait_after_trade_seconds)
             else:
-                self.update(symbol)
-                trade_results.update(self.coins[symbol], self.debugs[symbol])
+                self.update(index_symbol)
+                trade_results.update(self.coins[index_symbol], self.debugs[index_symbol])
         self.update_all("fast")
 
     def update_all(self, update_type=""):
-        for symbol in self.symbols:
-            self.update(symbol, update_type)
+        for index_symbol in range(len(self.symbols) - 1):
+            self.update(index_symbol, update_type)
 
-    def update(self, symbol, update_type="", wait_exception=20):
+    def update(self, index_symbol, update_type="", wait_exception=20):
         if update_type == "fast":
             time.sleep(self.fast_wait)
         else:
@@ -136,17 +141,20 @@ class Divergence:
         self.warn.debug_file()
         # Update to the latest price data and indicators related to it.
         try:
-            self.coins[symbol].update_data()
-            self.debugs[symbol].actualize_data(self.coins[symbol])
-            self.conditions[symbol].actualize_data(coin=self.coins[symbol], debug_obj=self.debugs[symbol])
+            self.coins[index_symbol].update_data()
+            self.debugs[index_symbol].actualize_data(self.coins[index_symbol])
+            self.conditions[index_symbol].actualize_data(coin=self.coins[index_symbol],
+                                                         debug_obj=self.debugs[index_symbol])
         except Exception as e:
-            self.warn.logs.add_log(f'\n\nWARNING : \n{e}\n\n')
+            self.warn.logs.add_log(f'\n\nWARNING UPDATE FUNCTION: \n{e}\n')
+            self.warn.logs.add_log(f"Debug data : \n{self.coins[index_symbol]}\n"
+                                   f"{self.debugs[index_symbol]}\n{self.conditions[index_symbol]}\n\n")
             n = 0
             wait = wait_exception
             if wait_exception != 20:
                 wait = wait_exception / 10
 
-            while n < 10:  # This code to avoid WatchTower sending false positive mails.
+            while n < 10:  # Avoid WatchTower sending false positive mails.
                 self.warn.debug_file()
                 time.sleep(wait)
                 n += 1

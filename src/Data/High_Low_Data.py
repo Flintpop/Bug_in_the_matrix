@@ -122,24 +122,6 @@ class HighLowHistory(Indicators):
 
         return list_of_high_low
 
-    def macd_line_checker(self, index, long):
-        last_macd_data = self.data['MACD'].tail(self.study_range - 1).values
-
-        res = True
-        i = 0
-        a, b = Core.switcher(long, self.bull_indexes, self.bear_indexes)
-
-        start = Core.macd_cross_detection(a, index)
-        end = Core.macd_cross_detection(b, start)
-
-        length = end - start
-
-        while res and i < length:
-            res = not Core.comparator_numbers(long, last_macd_data[i + start], 0)
-            i += 1
-
-        return res
-
     def indicators_init(self):
         self.ema_trend = self.ema(600)
         self.ema_fast = self.ema(150)
