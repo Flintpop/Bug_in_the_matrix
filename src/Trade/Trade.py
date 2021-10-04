@@ -9,8 +9,8 @@ class Trade:
     def __init__(self, coin: HighLowHistory, client, log):
         settings = Parameters()
         self.risk_ratio = settings.risk_ratio
-        self.risk_per_trade = settings.risk_per_trade_brut
-        self.risk_per_trade_brut = self.risk_per_trade
+        self.risk_per_trade = settings.risk_per_trade_brut  # raw value like 0.85
+        self.risk_per_trade_brut = self.risk_per_trade  # Which is 15% for exemple.
         self.risk_per_trade = 1 - self.risk_per_trade / 100
         self.warn = Warn()
 
@@ -96,7 +96,7 @@ class Trade:
         end_money = money
         if win:
             end_money = end_money - (end_money * self.fees * self.leverage)
-            end_money = end_money * (1 + (1 - self.risk_per_trade_brut) * self.risk_ratio)
+            end_money = end_money * (1 + (1 - self.risk_per_trade) * self.risk_ratio)
             end_money = end_money - (end_money * self.fees * self.leverage)
             win = 1
         else:

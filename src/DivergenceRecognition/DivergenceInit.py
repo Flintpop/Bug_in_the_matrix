@@ -100,8 +100,8 @@ class Divergence:
         log("\nTrade orders calculated.")
 
         log("\nInitiating binance procedures...")
-        # binance.open_trade(symbol=string_symbol)
-        # binance.place_sl_and_tp(symbol=string_symbol)
+        binance.open_trade(symbol=string_symbol)
+        binance.place_sl_and_tp(symbol=string_symbol)
         log("\nOrders placed and position open !")
         # Just print all the trade informations and add it to the log file.
         PrintUser.debug_trade_parameters(
@@ -119,9 +119,10 @@ class Divergence:
         time_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
 
         while binance.trade_in_going:
-            res = trade_results.check_result(binance, self.log_master, symbol=index_symbol, time_pos_open=time_pos_open)
+            target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
+                                                    time_pos_open=time_pos_open)
 
-            if res:
+            if target_hit:
                 binance.trade_in_going = False
                 time.sleep(self.settings.wait_after_trade_seconds)
             else:

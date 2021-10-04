@@ -9,15 +9,14 @@ class Parameters:
 
         # Trade related
         self.risk_ratio = 2
-        self.risk_per_trade_brut = 9
+        self.risk_per_trade_brut = 4
         self.buffer = 0.0002
+        self.fees = 0.00036
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100
         self.wait_after_trade = 0  # Number of candles skipped after a trade.
         self.wait_after_trade_seconds = self.wait_after_trade * 300
 
-        self.fees = 0.00036
-
-        self.market_symbol_list = ['BTCUSDT', 'ETHUSDT']
+        self.market_symbol_list = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT']
 
         # Detection related
         self.n_plot_macd = 5
