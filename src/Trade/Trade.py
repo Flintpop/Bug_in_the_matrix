@@ -39,6 +39,8 @@ class Trade:
         self.entry_price, self.entry_price_index = 0, 0
         self.take_profit = 0
 
+        self.settings = settings
+
         self.quantity, self.leverage = 0, 0
 
     def init_calculations(self):
@@ -53,7 +55,7 @@ class Trade:
             self.current_balance = float(self.infos["totalMarginBalance"])
             self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
 
-            self.quantity, self.leverage = Trade.quantity_calculator(self, self.balance_available)
+            self.quantity, self.leverage = self.quantity_calculator(self.balance_available)
 
     def entry_price_calc(self):
         prices = self.data['close'].tail(10).values
@@ -113,18 +115,30 @@ class Trade:
 
         percentage_risked_trade = self.percentage_risk_calculation()
         self.log("\n\nThe percentage risked on the trade is wo leverage : " + str(percentage_risked_trade))
-        leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
-        self.log("\nThe leverage is : " + str(leverage))
+        if percentage_risked_trade + self.settings.threshold_risk_trade > self.risk_per_trade:
+            leverage = 0
+            quantity = 0
+        else:
+            leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
+            self.log("\nThe leverage is : " + str(leverage))
 
-        quantity = (money_traded / self.entry_price) * leverage
-        quantity = quantity - 0.001
-        quantity = quantity.__round__(3)
+            quantity = (money_traded / self.entry_price) * leverage
+            # TODO Issue here, it is the smallest quantity for BTC only and not other markets (0.001)
+            quantity = quantity - 0.001
+            quantity = quantity.__round__(3)
 
-        self.log("\nMaximum loss of current trade : " +
-                 str(float(leverage * percentage_risked_trade).__round__()) + " %")
+            self.log("\nMaximum loss of current trade : " +
+                     str(float(leverage * percentage_risked_trade).__round__()) + " %")
 
-        self.log("\nThe quantity is : " + str(quantity) + " BTC")
+            self.log("\nThe quantity is : " + str(quantity) + " BTC")
 
+            if leverage < 1:
+                self.log("\n\n\nWARNING LEVERAGE : Leverage was set at 0 or below 1")
+                if quantity == 0:
+                    leverage = 0
+                    self.log("\nWARNING QUANTITY : Quantity was set at 0")
+                else:
+                    leverage = 1
         return quantity, leverage
 
     def leverage_calculation(self, percentage_risked, money_divided):

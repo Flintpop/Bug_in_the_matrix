@@ -99,35 +99,40 @@ class Divergence:
         binance.init_calculations()
         log("\nTrade orders calculated.")
 
-        log("\nInitiating binance procedures...")
-        binance.open_trade(symbol=string_symbol)
-        binance.place_sl_and_tp(symbol=string_symbol)
-        log("\nOrders placed and position open !")
+        if binance.leverage != 0 and binance.quantity > 0:
+            log("\nInitiating binance procedures...")
+            binance.open_trade(symbol=string_symbol)
+            binance.place_sl_and_tp(symbol=string_symbol)
+            log("\nOrders placed and position open !")
+
+            PrintUser.debug_trade_parameters(
+                self=self.debugs[index_symbol],
+                long=self.coins[index_symbol].long,
+                sl=binance.stop_loss,
+                tp=binance.take_profit,
+                entry_price=binance.entry_price,
+                entry_price_index=self.coins[index_symbol].study_range - 2,
+                symbol=string_symbol
+            )
+
+            trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
+
+            time_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
+
+            while binance.trade_in_going:
+                target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
+                                                        time_pos_open=time_pos_open)
+
+                if target_hit:
+                    binance.trade_in_going = False
+                    time.sleep(self.settings.wait_after_trade_seconds)
+                else:
+                    self.update(index_symbol)
+                    trade_results.update(self.coins[index_symbol], self.debugs[index_symbol])
+        else:
+            log("\nTrade aborted !")
         # Just print all the trade informations and add it to the log file.
-        PrintUser.debug_trade_parameters(
-            self=self.debugs[index_symbol],
-            long=self.coins[index_symbol].long,
-            sl=binance.stop_loss,
-            tp=binance.take_profit,
-            entry_price=binance.entry_price,
-            entry_price_index=self.coins[index_symbol].study_range - 2,
-            symbol=string_symbol
-        )
 
-        trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
-
-        time_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
-
-        while binance.trade_in_going:
-            target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
-                                                    time_pos_open=time_pos_open)
-
-            if target_hit:
-                binance.trade_in_going = False
-                time.sleep(self.settings.wait_after_trade_seconds)
-            else:
-                self.update(index_symbol)
-                trade_results.update(self.coins[index_symbol], self.debugs[index_symbol])
         self.update_all("fast")
 
     def update_all(self, update_type=""):
