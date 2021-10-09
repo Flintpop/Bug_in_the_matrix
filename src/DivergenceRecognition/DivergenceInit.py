@@ -23,6 +23,7 @@ class Divergence:
 
         self.n_coin = len(settings.market_symbol_list)
         self.symbols = settings.market_symbol_list
+        self.lowest_quantities = settings.lowest_quantity
         self.macd_line_mode = settings.macd_line_mode
 
         for symbol in range(self.n_coin):
@@ -55,7 +56,7 @@ class Divergence:
                 same_trade = self.conditions[symbol].check_not_same_trade()
                 is_obsolete = self.conditions[symbol].is_obsolete()
                 if divergence and not same_trade and not is_obsolete:
-                    self.warn.logs.add_log(f"\nFor "
+                    self.warn.logs.add_log(f"\n\nFor "
                                            f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                     self.conditions[symbol].init_trade_final_checking()
 
@@ -84,7 +85,7 @@ class Divergence:
         self.debugs[index_symbol].actualize_data(self.coins[index_symbol])
         string_symbol = self.debugs[index_symbol].get_current_trade_symbol(symbol_index=index_symbol)
 
-        log("\n\n\nInitiating trade procedures...")
+        log("\n\n\nInitiating first trade procedures...")
 
         # BinanceOrders has all the methods that is related to sl, tp, leverage, quantity calc in function of the risk
         # chosen per trade and other parameters. This class contains also all the methods related to actually open a
@@ -93,13 +94,15 @@ class Divergence:
             coin=self.coins[index_symbol],
             client=self.client,
             log=self.warn.logs.add_log,
-            symbol=string_symbol
+            symbol=string_symbol,
+            lowest_quantity=self.lowest_quantities[index_symbol]
         )
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()
         log("\nTrade orders calculated.")
 
         if binance.leverage != 0 and binance.quantity > 0:
+            log("\n\nTrade in going !")
             log("\nInitiating binance procedures...")
             binance.open_trade(symbol=string_symbol)
             binance.place_sl_and_tp(symbol=string_symbol)

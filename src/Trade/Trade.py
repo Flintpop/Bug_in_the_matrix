@@ -6,13 +6,14 @@ import time
 
 
 class Trade:
-    def __init__(self, coin: HighLowHistory, client, log):
+    def __init__(self, coin: HighLowHistory, client, log, lowest_quantity):
         settings = Parameters()
         self.risk_ratio = settings.risk_ratio
         self.risk_per_trade = settings.risk_per_trade_brut  # raw value like 0.85
         self.risk_per_trade_brut = self.risk_per_trade  # Which is 15% for exemple.
         self.risk_per_trade = 1 - self.risk_per_trade / 100
         self.warn = Warn()
+        self.lowest_quantity = lowest_quantity
 
         self.buffer = settings.buffer
         self.client = client
@@ -50,7 +51,6 @@ class Trade:
             self.take_profit = Trade.take_profit_calc(self, self.entry_price, self.stop_loss)
 
             self.trade_in_going = True
-            self.log("\n\nTrade in going !")
 
             self.current_balance = float(self.infos["totalMarginBalance"])
             self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
@@ -115,36 +115,77 @@ class Trade:
 
         percentage_risked_trade = self.percentage_risk_calculation()
         self.log("\n\nThe percentage risked on the trade is wo leverage : " + str(percentage_risked_trade))
-        if percentage_risked_trade + self.settings.threshold_risk_trade > self.risk_per_trade:
+
+        lowest_entry_price_trade = self.lowest_quantity * self.entry_price
+        leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
+
+        if leverage < 1:
+            leverage_diviseur = 1
+        else:
+            leverage_diviseur = leverage
+
+        # If the lowest money I can put on the trade is superior to the money available, trade cancelled.
+        if (lowest_entry_price_trade / leverage_diviseur) > self.balance_available:
             leverage = 0
             quantity = 0
         else:
-            leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
-            self.log("\nThe leverage is : " + str(leverage))
+            # If the minimum possible of what I can afford to loose is superior to the maximum of what I
+            # can afford to loose, trade cancelled.
 
-            quantity = (money_traded / self.entry_price) * leverage
-            # TODO Issue here, it is the smallest quantity for BTC only and not other markets (0.001)
-            quantity = quantity - 0.001
-            quantity = quantity.__round__(3)
+            if (lowest_entry_price_trade * (percentage_risked_trade / 100)) > \
+                    (self.balance_available * (self.risk_per_trade / 100)) and leverage <= 1:
+                leverage = 0
+                quantity = 0
+            else:
+                # Having a leverage of 1 in the end, while reducing money exposition.
+                while leverage <= 1:
+                    money_divided += 0.1
+                    money_traded = money_available / money_divided
+                    leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
 
-            self.log("\nMaximum loss of current trade : " +
-                     str(float(leverage * percentage_risked_trade).__round__()) + " %")
+                leverage = leverage.__round__()
+                self.log("\nThe leverage is : " + str(leverage))
 
-            self.log("\nThe quantity is : " + str(quantity) + " BTC")
+                quantity = (money_traded / self.entry_price) * leverage
 
-            if leverage < 1:
-                self.log("\n\n\nWARNING LEVERAGE : Leverage was set at 0 or below 1")
-                if quantity == 0:
-                    leverage = 0
-                    self.log("\nWARNING QUANTITY : Quantity was set at 0")
+                count = 1
+                temp = self.lowest_quantity.__round__(count)
+
+                # Determine where to round the quantity.
+                while temp % 10 == 0:
+                    temp = self.lowest_quantity.__round__(count)
+                    count += 1
+
+                quantity = quantity.__round__(count)
+
+                if quantity > self.lowest_quantity:
+                    quantity = quantity - self.lowest_quantity
                 else:
-                    leverage = 1
+                    quantity = 0
+
+                self.log("\nMaximum loss of current trade : " +
+                         str(float(leverage * percentage_risked_trade).__round__()) + " %")
+
+                self.log("\nThe quantity is : " + str(quantity))
+
+                quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
+
+        return quantity, leverage
+
+    # Last check of possible incorrect leverage or quantity.
+    def last_leverage_quantity_check(self, leverage, quantity):
+        if leverage < 1:
+            self.log("\n\n\nWARNING LEVERAGE : Leverage was set at 0 or below 1")
+            leverage = 1
+        if quantity == 0:
+            leverage = 0
+            self.log("\nWARNING QUANTITY : Quantity was set at 0")
+
         return quantity, leverage
 
     def leverage_calculation(self, percentage_risked, money_divided):
         self.log("\nThe diviseur in leverage calc is : " + str(percentage_risked * self.risk_per_trade_brut))
         leverage = (1 / percentage_risked * self.risk_per_trade_brut) * money_divided
-        leverage = leverage.__round__()
         self.correct_leverage(leverage=leverage, risk_trade=percentage_risked)
         return int(leverage)
 
@@ -155,23 +196,21 @@ class Trade:
             percentage_risked_trade = (1 - self.entry_price / self.stop_loss) * 100  # short
         return percentage_risked_trade
 
-    @staticmethod
-    def correct_leverage(leverage, risk_trade):
+    def correct_leverage(self, leverage, risk_trade):
         while leverage * risk_trade * 1.5 >= 100:  # Not tested. Looks to work
-            print("\nHigh risk of liquidation ! Reducing leverage...")
+            self.log("\nHigh risk of liquidation ! Reducing leverage...")
             leverage = leverage - ((leverage * 0.1).__round__())
         if leverage >= 125:
-            print("\nLeverage too high. The platform cannot handle it.")
+            self.log("\nLeverage too high. The platform cannot handle it.")
             leverage = 120
         elif leverage < 1:
-            print("\nLeverage inferior to 1 !")
-            leverage = 1
+            self.log("\nLeverage inferior to 1 !")
         return leverage
 
 
 class BinanceOrders(Trade):
-    def __init__(self, coin, client, log, symbol):
-        super().__init__(coin, client, log)
+    def __init__(self, coin, client, log, symbol, lowest_quantity):
+        super().__init__(coin, client, log, lowest_quantity)
 
         BinanceOrders.cancel_all_orders(self, symbol)
 
