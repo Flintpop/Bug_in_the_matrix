@@ -5,7 +5,7 @@ import pandas as pd
 from src.Miscellanous.Settings import Parameters
 
 # the data has to be this way :
-# datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', 104.96, 119.6544]]
+# datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00',104.96, 119.6544]]
 
 
 def os_path_fix():
@@ -19,6 +19,7 @@ def os_path_fix():
     return string
 
 
+# noinspection PyTypeChecker
 class LogMaster:
     def __init__(self):
         self.logs_path = os_path_fix() + "logs.txt"
@@ -33,11 +34,10 @@ class LogMaster:
             print("Trade history initialized")
             self.trade_data = self.get_data()
 
-    @staticmethod
-    def init_trade_history():
+    def init_trade_history(self):
         df = pd.DataFrame(columns=['symbol', 'trade_type', 'win_loss', 'trade_enter_time', 'trade_close_time',
                                    'money_traded', 'result_money'])
-        df.to_csv('src/Output/TradeHistory.csv', index=False)
+        df.to_csv(self.trade_path, index=False)
 
     def init_log(self):
         f = open(self.logs_path, "w+")
@@ -94,11 +94,19 @@ class PrintUser:
         self.settings = Parameters()
 
         self.logs = LogMaster()  # TODO: Potential bug here.
+        self.print_log = self.logs.add_log
 
     def actualize_data(self, coin):
         self.data = coin.data
         self.data_range = coin.data_range
         self.study_range = coin.study_range
+
+    def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol):
+        self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol)}"
+                       f"because of : \n"
+                       f"- crossed ? | {crossed}"
+                       f"\n- divergence ? | {divergence}"
+                       f"\n- good_macd_pos ? | {good_macd_pos}")
 
     def debug_macd_trend_data(self, bull_indexes, bear_indexes, fake_bull, fake_bear):
         bearish_time = []
@@ -175,3 +183,5 @@ class PrintUser:
 
 if __name__ == '__main__':
     a = LogMaster()
+    datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00', 104.96, 119.6544]]
+    a.append_trade_history(datas)

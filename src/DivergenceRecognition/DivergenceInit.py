@@ -60,19 +60,24 @@ class Divergence:
                                            f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                     self.conditions[symbol].init_trade_final_checking()
 
-                    while not crossed and divergence:
+                    if self.macd_line_mode:
+                        good_macd_pos = self.conditions[symbol].macd_line_checker()
+                    else:
+                        good_macd_pos = True
+
+                    # Check the final indicators compliance.
+                    while not crossed and divergence and good_macd_pos:
                         self.update(symbol, update_type="fast")
-                        crossed, divergence = self.conditions[symbol].trade_final_checking()  # Check the final
-                        # indicators compliance.
-                    if crossed and divergence:
+                        crossed, divergence = self.conditions[symbol].trade_final_checking()
                         if self.macd_line_mode:
                             good_macd_pos = self.conditions[symbol].macd_line_checker()
                         else:
                             good_macd_pos = True
-                        if good_macd_pos:
-                            self.init_trade(symbol)
+
+                    if crossed and divergence and good_macd_pos:
+                        self.init_trade(symbol)
                     else:
-                        self.warn.logs.add_log(f"\nTrade cancelled on {self.symbols[symbol]}!")
+                        self.debugs[symbol].print_trade_aborted(crossed, divergence, good_macd_pos, symbol)
 
                 if self.download_mode:
                     self.update(symbol, wait_exception=1800)  # Update indicators and data.
@@ -97,11 +102,12 @@ class Divergence:
             symbol=string_symbol,
             lowest_quantity=self.lowest_quantities[index_symbol]
         )
+
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()
         log("\nTrade orders calculated.")
 
-        if binance.leverage != 0 and binance.quantity > 0:
+        if binance.leverage > 0 and binance.quantity > 0:
             log("\n\nTrade in going !")
             log("\nInitiating binance procedures...")
             binance.open_trade(symbol=string_symbol)
@@ -120,11 +126,11 @@ class Divergence:
 
             trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
 
-            time_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
+            date_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
 
             while binance.trade_in_going:
                 target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
-                                                        time_pos_open=time_pos_open)
+                                                        time_pos_open=date_pos_open)
 
                 if target_hit:
                     binance.trade_in_going = False
@@ -133,8 +139,7 @@ class Divergence:
                     self.update(index_symbol)
                     trade_results.update(self.coins[index_symbol], self.debugs[index_symbol])
         else:
-            log("\nTrade aborted !")
-        # Just print all the trade informations and add it to the log file.
+            log("\nTrade aborted because of leverage of quantity set to 0 !")
 
         self.update_all("fast")
 
@@ -158,12 +163,14 @@ class Divergence:
             self.warn.logs.add_log(f'\n\nWARNING UPDATE FUNCTION: \n{e}\n')
             self.warn.logs.add_log(f"Debug data : \n{self.coins[index_symbol]}\n"
                                    f"{self.debugs[index_symbol]}\n{self.conditions[index_symbol]}\n\n")
+
+            # Avoid WatchTower sending false positive mails.
             n = 0
             wait = wait_exception
             if wait_exception != 20:
                 wait = wait_exception / 10
 
-            while n < 10:  # Avoid WatchTower sending false positive mails.
+            while n < 10:
                 self.warn.debug_file()
                 time.sleep(wait)
                 n += 1

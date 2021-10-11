@@ -17,7 +17,7 @@ class Parameters:
         self.wait_after_trade_seconds = self.wait_after_trade * 300
         self.threshold_risk_trade = 2
 
-        self.market_symbol_list = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT']
+        self.market_symbol_list = ('BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT')
         self.lowest_quantity = [0.001, 0.001, 0.01, 1]
 
         # Detection related
