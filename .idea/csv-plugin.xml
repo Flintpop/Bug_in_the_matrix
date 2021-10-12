@@ -10,21 +10,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\src\Miscellanous\TradeHistory.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\src\Output\TradeHistory.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\TradeHistory.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

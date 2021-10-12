@@ -18,7 +18,8 @@ class Parameters:
         self.threshold_risk_trade = 2
 
         self.market_symbol_list = ('BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT')
-        self.lowest_quantity = [0.001, 0.001, 0.01, 1]
+        self.lowest_quantity = [0.001, 0.001, 0.01, 1.0]
+        self.lowest_money_binance = 10.0
 
         # Detection related
         self.n_plot_macd = 5

@@ -3,10 +3,11 @@ from binance.client import Client
 from src.DivergenceRecognition.DivergenceInit import Divergence
 from src.Miscellanous.security import GetData
 from src.Miscellanous.Settings import Parameters
+import traceback
 
 #####################################################################################
 """
-Version : 1.2.6
+Version : 1.2.7
 Date : 11 / 10 / 2021
 """
 #####################################################################################
@@ -24,18 +25,20 @@ class Program:
     # Connect to binance api
     @staticmethod
     def connect():
-        key = GetData.login()
         successful_login = False
         client = None
         while not successful_login:
             try:
-                client = Client(key[0], key[1])
+                key = GetData.login()
+                client = None
+                api_key, secret_key = key[0], key[1]
+                client = Client(api_key, secret_key)
                 successful_login = True
             except Exception as e:
+                print(traceback.format_exc())
                 print(e)
-                print("Please try again.")
+                print("Wrong password. Please try again.")
         key = ""
-        print(key)
         if client is None:
             raise EnvironmentError
         return client
