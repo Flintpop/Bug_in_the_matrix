@@ -1,6 +1,6 @@
 import datetime
 
-from WarnUser import Warn
+from warn_user import Warn
 from src.Data.data_detection_algorithms import Core
 
 

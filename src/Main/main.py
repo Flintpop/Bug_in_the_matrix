@@ -1,14 +1,14 @@
 from binance.client import Client
 
-from src.DivergenceRecognition.DivergenceInit import Divergence
+from src.DivergenceRecognition.divergence_init import Divergence
 from src.Miscellanous.security import GetData
-from src.Miscellanous.Settings import Parameters
+from src.Miscellanous.settings import Parameters
 import traceback
 
 #####################################################################################
 """
-Version : 1.2.7
-Date : 11 / 10 / 2021
+Version : 1.3
+Date : 14 / 10 / 2021
 """
 #####################################################################################
 
@@ -38,7 +38,10 @@ class Program:
                 print(traceback.format_exc())
                 print(e)
                 print("Wrong password. Please try again.")
+
         key = ""
+        print(key)
+
         if client is None:
             raise EnvironmentError
         return client

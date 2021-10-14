@@ -1,4 +1,4 @@
-from src.Data.Indicators import Indicators
+from src.Data.indicators import Indicators
 from src.Data.data import Data
 from src.Data.data_detection_algorithms import Core
 

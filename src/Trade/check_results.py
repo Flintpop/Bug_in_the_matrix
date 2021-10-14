@@ -1,6 +1,6 @@
-from WarnUser import Warn
-from src.Trade.Trade import Trade
-from src.Data.High_Low_Data import HighLowHistory
+from warn_user import Warn
+from src.Trade.ProceduresAndCalc.calc_orders import CalcOrders
+from src.Data.high_low_data import HighLowHistory
 
 
 class TradeResults:
@@ -8,7 +8,7 @@ class TradeResults:
         self.coin = coin
         self.debug = debug_obj
 
-    def check_result(self, binance, log_master, symbol, time_pos_open):
+    def check_result(self, binance, log_master, symbol, time_pos_open, last_money, current_money):
 
         log = self.debug.logs.add_log
         win, target_hit = self.check_target(binance.stop_loss, binance.take_profit, time_pos_open)
@@ -19,18 +19,24 @@ class TradeResults:
             time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
             warn = Warn()
             symbol_word = self.debug.get_current_trade_symbol(symbol_index=symbol)
+
+            close_price = binance.take_profit if win else binance.stop_loss
+
             warn.send_result_email(
                 long=self.coin.long,
                 entry_price=binance.entry_price,
+                close_price=close_price,
                 time_pos_hit=time_pos_hit,
                 time_pos_open=time_pos_open,
                 win=win,
-                symbol=symbol_word
+                symbol=symbol_word,
+                last_money=last_money,
+                current_money=current_money
             )
             trade_type_string = warn.trade_type_string(self.coin.long)
 
-            Trade.add_to_trade_history(binance, symbol_word, trade_type_string, win, time_pos_open, time_pos_hit,
-                                       binance.current_balance, log_master)
+            CalcOrders.add_to_trade_history(binance, symbol_word, trade_type_string, win, time_pos_open, time_pos_hit,
+                                            binance.current_balance, log_master)
             return True
         return False
 

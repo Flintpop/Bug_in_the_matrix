@@ -2,7 +2,7 @@ import datetime as dt
 import time
 
 import pandas as pd
-from src.Miscellanous.Settings import Parameters
+from src.Miscellanous.settings import Parameters
 
 # the data has to be this way :
 # datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00',104.96, 119.6544]]
@@ -102,7 +102,7 @@ class PrintUser:
         self.study_range = coin.study_range
 
     def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol):
-        self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol)}"
+        self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol)} "
                        f"because of : \n"
                        f"- crossed ? | {crossed}"
                        f"\n- divergence ? | {divergence}"

@@ -1,12 +1,13 @@
 import time
+import traceback
 
-from WarnUser import Warn
+from warn_user import Warn
 from print_and_debug import PrintUser, LogMaster
-from src.Data.High_Low_Data import HighLowHistory
-from src.DivergenceRecognition.Conditions import StrategyConditions
-from src.Trade.CheckResults import TradeResults
-from src.Trade.Trade import BinanceOrders
-from src.Miscellanous.Settings import Parameters
+from src.Data.high_low_data import HighLowHistory
+from src.DivergenceRecognition.conditions import StrategyConditions
+from src.Trade.check_results import TradeResults
+from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
+from src.Miscellanous.settings import Parameters
 
 
 class Divergence:
@@ -48,39 +49,57 @@ class Divergence:
         self.warn.logs.add_log("\n\nBot initialized !")
 
     def scan(self):
-        while True:
+        stopped = False
+        while stopped:
             crossed = False
             # Spots divergence, then checks if it is not the same it was used.
             for symbol in range(self.n_coin):
-                divergence = self.conditions[symbol].divergence_spotter()
-                same_trade = self.conditions[symbol].check_not_same_trade()
-                is_obsolete = self.conditions[symbol].is_obsolete()
-                if divergence and not same_trade and not is_obsolete:
-                    self.warn.logs.add_log(f"\n\nFor "
-                                           f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
-                    self.conditions[symbol].init_trade_final_checking()
+                try:
+                    divergence = self.conditions[symbol].divergence_spotter()
+                    same_trade = self.conditions[symbol].check_not_same_trade()
+                    is_obsolete = self.conditions[symbol].is_obsolete()
+                    if divergence and not same_trade and not is_obsolete:
+                        self.warn.logs.add_log(f"\n\nFor "
+                                               f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
+                        self.conditions[symbol].init_trade_final_checking()
 
-                    if self.macd_line_mode:
-                        good_macd_pos = self.conditions[symbol].macd_line_checker()
-                    else:
-                        good_macd_pos = True
-
-                    # Check the final indicators compliance.
-                    while not crossed and divergence and good_macd_pos:
-                        self.update(symbol, update_type="fast")
-                        crossed, divergence = self.conditions[symbol].trade_final_checking()
                         if self.macd_line_mode:
                             good_macd_pos = self.conditions[symbol].macd_line_checker()
                         else:
                             good_macd_pos = True
 
-                    if crossed and divergence and good_macd_pos:
-                        self.init_trade(symbol)
-                    else:
-                        self.debugs[symbol].print_trade_aborted(crossed, divergence, good_macd_pos, symbol)
+                        # Check the final indicators compliance.
+                        while not crossed and divergence and good_macd_pos:
+                            self.update(symbol, update_type="fast")
+                            crossed, divergence = self.conditions[symbol].trade_final_checking()
+                            if self.macd_line_mode:
+                                good_macd_pos = self.conditions[symbol].macd_line_checker()
+                            else:
+                                good_macd_pos = True
 
-                if self.download_mode:
-                    self.update(symbol, wait_exception=1800)  # Update indicators and data.
+                        if crossed and divergence and good_macd_pos:
+                            self.init_trade(symbol)
+                        else:
+                            self.debugs[symbol].print_trade_aborted(crossed, divergence, good_macd_pos, symbol)
+
+                    if self.download_mode:
+                        self.update(symbol, wait_exception=1800)  # Update indicators and data.
+                except Exception as e:
+                    stopped = True
+
+                    from src.WatchTower import send_email
+                    import traceback
+
+                    self.warn.logs.add_log(f"\n\n\nCRITICAL ERROR : Bot stopped !"
+                                           f"\n\n{e}"
+                                           f"\n\nThe traceback is : "
+                                           f"\n\n\n{traceback.format_exc()}")
+                    word_mail = f"Bot stopped !\n" \
+                                f"Here is the current small error msg : {e}" \
+                                f"Here is the traceback : \n\n" \
+                                f"{traceback.format_exc()}"
+                    send_email(word=word_mail, subject=f"Scan error in the market "
+                                                       f"{self.debugs[symbol].get_current_trade_symbol(symbol)}")
 
     def init_trade(self, index_symbol):
         self.warn.debug_file()
@@ -107,13 +126,8 @@ class Divergence:
         binance.init_calculations()
         log("\nTrade orders calculated.")
 
-        if binance.leverage > 0 and binance.quantity > 0:
+        if binance.leverage > 0 and self.settings.maximum_leverage[index_symbol] > binance.quantity > 0:
             log("\n\nTrade in going !")
-            log("\nInitiating binance procedures...")
-            binance.open_trade(symbol=string_symbol)
-            binance.place_sl_and_tp(symbol=string_symbol)
-            log("\nOrders placed and position open !")
-
             PrintUser.debug_trade_parameters(
                 self=self.debugs[index_symbol],
                 long=self.coins[index_symbol].long,
@@ -124,20 +138,35 @@ class Divergence:
                 symbol=string_symbol
             )
 
-            trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
+            log("\nInitiating binance procedures...")
 
-            date_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
+            try:
+                binance.open_trade(symbol=string_symbol)
+                binance.place_sl_and_tp(symbol=string_symbol)
+                log("\nOrders placed and position open !")
+                infos = self.client.futures_account()
 
-            while binance.trade_in_going:
-                target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
-                                                        time_pos_open=date_pos_open)
+                last_money = float(infos["totalMarginBalance"])
+                trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
+                date_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
 
-                if target_hit:
-                    binance.trade_in_going = False
-                    time.sleep(self.settings.wait_after_trade_seconds)
-                else:
-                    self.update(index_symbol)
-                    trade_results.update(self.coins[index_symbol], self.debugs[index_symbol])
+                while binance.trade_in_going:
+                    current_money = float(infos["totalMarginBalance"])
+                    target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
+                                                            time_pos_open=date_pos_open, current_money=current_money,
+                                                            last_money=last_money)
+                    if target_hit:
+                        binance.trade_in_going = False
+                        time.sleep(self.settings.wait_after_trade_seconds)
+                    else:
+                        self.update(index_symbol)
+                        trade_results.update(self.coins[index_symbol], self.debugs[index_symbol])
+            except Exception as e:
+                log("\n\nWARNING : Binance procedures failed !\n\n")
+                log(e)
+                log(f"\n\n\ntraceback.format_exc")
+                binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
+                binance.close_pos(symbol_string=string_symbol)
         else:
             log("\nTrade aborted because of leverage of quantity set to 0 !")
 
