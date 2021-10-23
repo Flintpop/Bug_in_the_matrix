@@ -1,5 +1,4 @@
 import time
-import traceback
 
 from warn_user import Warn
 from print_and_debug import PrintUser, LogMaster
@@ -50,7 +49,7 @@ class Divergence:
 
     def scan(self):
         stopped = False
-        while stopped:
+        while not stopped:
             crossed = False
             # Spots divergence, then checks if it is not the same it was used.
             for symbol in range(self.n_coin):
@@ -58,15 +57,17 @@ class Divergence:
                     divergence = self.conditions[symbol].divergence_spotter()
                     same_trade = self.conditions[symbol].check_not_same_trade()
                     is_obsolete = self.conditions[symbol].is_obsolete()
-                    if divergence and not same_trade and not is_obsolete:
+
+                    # WARNING MIGHT CREATE BUGS RELATED TO DETECTION
+                    if self.macd_line_mode:
+                        good_macd_pos = self.conditions[symbol].macd_line_checker()
+                    else:
+                        good_macd_pos = True
+
+                    if divergence and not same_trade and not is_obsolete and good_macd_pos:
                         self.warn.logs.add_log(f"\n\nFor "
                                                f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                         self.conditions[symbol].init_trade_final_checking()
-
-                        if self.macd_line_mode:
-                            good_macd_pos = self.conditions[symbol].macd_line_checker()
-                        else:
-                            good_macd_pos = True
 
                         # Check the final indicators compliance.
                         while not crossed and divergence and good_macd_pos:
@@ -118,9 +119,10 @@ class Divergence:
             coin=self.coins[index_symbol],
             client=self.client,
             log=self.warn.logs.add_log,
-            symbol=string_symbol,
             lowest_quantity=self.lowest_quantities[index_symbol]
         )
+
+        binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
 
         log("\nCalculating stop_loss, take profit...")
         binance.init_calculations()

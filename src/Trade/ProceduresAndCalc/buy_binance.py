@@ -2,10 +2,8 @@ from src.Trade.ProceduresAndCalc.calc_orders import CalcOrders
 import time
 
 class BinanceOrders(CalcOrders):
-    def __init__(self, coin, client, log, symbol, lowest_quantity):
+    def __init__(self, coin, client, log, lowest_quantity):
         super().__init__(coin, client, log, lowest_quantity)
-
-        BinanceOrders.cancel_all_orders(self, symbol)
 
     def open_trade(self, symbol):
         if self.coin.long:

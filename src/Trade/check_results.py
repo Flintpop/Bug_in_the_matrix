@@ -18,7 +18,7 @@ class TradeResults:
 
             time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
             warn = Warn()
-            symbol_word = self.debug.get_current_trade_symbol(symbol_index=symbol)
+            string_symbol = self.debug.get_current_trade_symbol(symbol_index=symbol)
 
             close_price = binance.take_profit if win else binance.stop_loss
 
@@ -29,13 +29,13 @@ class TradeResults:
                 time_pos_hit=time_pos_hit,
                 time_pos_open=time_pos_open,
                 win=win,
-                symbol=symbol_word,
+                symbol=string_symbol,
                 last_money=last_money,
                 current_money=current_money
             )
             trade_type_string = warn.trade_type_string(self.coin.long)
 
-            CalcOrders.add_to_trade_history(binance, symbol_word, trade_type_string, win, time_pos_open, time_pos_hit,
+            CalcOrders.add_to_trade_history(binance, string_symbol, trade_type_string, win, time_pos_open, time_pos_hit,
                                             binance.current_balance, log_master)
             return True
         return False

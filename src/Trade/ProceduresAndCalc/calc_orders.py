@@ -106,9 +106,7 @@ class CalcOrders:
         self.log("\n\nThe percentage risked on the trade is wo leverage : " + str(percentage_risked_trade))
 
         lowest_entry_price_trade = self.lowest_quantity * self.entry_price
-        leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
-        self.log("\nThe diviseur in leverage calc is : " + str(percentage_risked_trade *
-                                                               self.settings.risk_per_trade_brut))
+        leverage = self.leverage_calculation(percentage_risked_trade)
 
         if leverage < 1:
             leverage_diviseur = 1
@@ -128,11 +126,16 @@ class CalcOrders:
                 quantity = 0
             else:
                 # Having a leverage of 1 in the end, while reducing money exposition.
-                while leverage <= 1 and money_traded > self.settings.lowest_money_binance:
-                    money_divided += 0.1
-                    money_traded = money_available / money_divided
-                    leverage = self.leverage_calculation(percentage_risked_trade, money_divided)
+                if self.settings.risk_per_trade < percentage_risked_trade:
+                    while leverage < 1 and money_traded > self.settings.lowest_money_binance:
+                        money_divided += 0.1
+                        money_traded = money_available / money_divided
+                        percentage_risked_trade_adjusted = percentage_risked_trade / money_divided
+                        leverage = self.leverage_calculation(percentage_risked_trade_adjusted)
+                else:
+                    leverage = self.leverage_calculation(percentage_risked_trade)
 
+                self.log(f"The leverage before round is : {leverage} and after : {leverage.__round__()}")
                 leverage = leverage.__round__()
                 if money_traded > self.settings.lowest_money_binance and leverage > 1:
                     quantity = (money_traded / self.entry_price) * leverage
@@ -173,13 +176,13 @@ class CalcOrders:
                     if money_traded > self.settings.lowest_money_binance:
                         self.log(f"\n\nWARNING MONEY ENTRY : TOO LOW ({money_traded.__round__(2)})")
                     else:
-                        self.log(f"\n\nWARNING LEVERAGE : BELOW 1")
+                        self.log(f"\n\nWARNING LEVERAGE : BELOW 1 ({leverage})")
                     quantity = 0
                     leverage = 0
 
         return quantity, leverage
 
-    # Last check of possible incorrect leverage or quantity.
+    # Last check of possible incorrect leverage or quantity. Avoid crash in binance APIs.
     def last_leverage_quantity_check(self, leverage, quantity):
         if leverage < 1:
             self.log("\n\n\nWARNING LEVERAGE : Leverage was set at 0 or below 1")
@@ -190,8 +193,8 @@ class CalcOrders:
 
         return quantity, leverage
 
-    def leverage_calculation(self, percentage_risked, money_divided):
-        leverage = (1 / percentage_risked * self.settings.risk_per_trade_brut) * money_divided
+    def leverage_calculation(self, percentage_risked):
+        leverage = (1 / percentage_risked) * self.settings.risk_per_trade_brut
         self.correct_leverage(leverage=leverage, risk_trade=percentage_risked)
         return int(leverage)
 
@@ -210,5 +213,5 @@ class CalcOrders:
             self.log("\nLeverage too high. The platform cannot handle it.")
             leverage = 120
         elif leverage < 1:
-            self.log("\nSMALL WARNING : Leverage inferior to 1 !")
+            self.log(f"\nSMALL WARNING : Leverage inferior to 1 ! | {leverage}")
         return leverage
