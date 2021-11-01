@@ -1,7 +1,7 @@
 import datetime
 
 from src.WatchTower import send_email
-from src.Miscellanous.print_and_debug import os_path_fix, LogMaster
+from src.Miscellaneous.print_and_debug import os_path_fix, LogMaster
 
 
 class Warn:

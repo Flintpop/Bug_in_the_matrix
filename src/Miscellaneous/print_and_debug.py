@@ -2,7 +2,7 @@ import datetime as dt
 import time
 
 import pandas as pd
-from src.Miscellanous.settings import Parameters
+from src.Miscellaneous.settings import Parameters
 
 # the data has to be this way :
 # datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00',104.96, 119.6544]]

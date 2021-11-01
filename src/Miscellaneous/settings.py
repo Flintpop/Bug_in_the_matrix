@@ -9,7 +9,7 @@ class Parameters:
 
         # Trade related
         self.risk_ratio = 2
-        self.risk_per_trade_brut = 4
+        self.risk_per_trade_brut = 6
         self.buffer = 0.0002
         self.fees = 0.00036
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100

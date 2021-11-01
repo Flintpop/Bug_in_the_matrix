@@ -1,14 +1,14 @@
 from binance.client import Client
 
 from src.DivergenceRecognition.divergence_init import Divergence
-from src.Miscellanous.security import GetData
-from src.Miscellanous.settings import Parameters
+from src.Miscellaneous.security import GetData
+from src.Miscellaneous.settings import Parameters
 import traceback
 
 #####################################################################################
 """
-Version : 1.3.1
-Date : 23 / 10 / 2021
+Version : 1.3.2
+Date : 1 / 11 / 2021
 """
 #####################################################################################
 

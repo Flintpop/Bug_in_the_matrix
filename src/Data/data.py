@@ -1,7 +1,7 @@
 import datetime as dt
 import pandas as pd
 
-from src.Miscellanous.settings import Parameters
+from src.Miscellaneous.settings import Parameters
 
 # TODO: Refactor the MACD trend data func, too much code in 1 function
 # TODO: Try to make as much functions as possible.

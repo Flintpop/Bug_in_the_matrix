@@ -1,5 +1,5 @@
 from warn_user import Warn
-from src.Miscellanous.settings import Parameters
+from src.Miscellaneous.settings import Parameters
 from src.Data.high_low_data import HighLowHistory
 import datetime
 
@@ -173,7 +173,7 @@ class CalcOrders:
 
                     quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
                 else:
-                    if money_traded > self.settings.lowest_money_binance:
+                    if money_traded < self.settings.lowest_money_binance:
                         self.log(f"\n\nWARNING MONEY ENTRY : TOO LOW ({money_traded.__round__(2)})")
                     else:
                         self.log(f"\n\nWARNING LEVERAGE : BELOW 1 ({leverage})")
@@ -182,7 +182,7 @@ class CalcOrders:
 
         return quantity, leverage
 
-    # Last check of possible incorrect leverage or quantity. Avoid crash in binance APIs.
+    # Last check of possible incorrect leverage or quantity. Avoid incorrect input in binance APIs.
     def last_leverage_quantity_check(self, leverage, quantity):
         if leverage < 1:
             self.log("\n\n\nWARNING LEVERAGE : Leverage was set at 0 or below 1")

@@ -6,7 +6,7 @@ from src.Data.high_low_data import HighLowHistory
 from src.DivergenceRecognition.conditions import StrategyConditions
 from src.Trade.check_results import TradeResults
 from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
-from src.Miscellanous.settings import Parameters
+from src.Miscellaneous.settings import Parameters
 
 
 class Divergence:
@@ -64,7 +64,8 @@ class Divergence:
                     else:
                         good_macd_pos = True
 
-                    if divergence and not same_trade and not is_obsolete and good_macd_pos:
+                    if divergence and not same_trade and not is_obsolete and good_macd_pos and not \
+                            self.conditions[symbol].coin.long:
                         self.warn.logs.add_log(f"\n\nFor "
                                                f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                         self.conditions[symbol].init_trade_final_checking()
@@ -153,6 +154,7 @@ class Divergence:
                 date_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
 
                 while binance.trade_in_going:
+                    infos = self.client.futures_account()
                     current_money = float(infos["totalMarginBalance"])
                     target_hit = trade_results.check_result(binance, self.log_master, symbol=index_symbol,
                                                             time_pos_open=date_pos_open, current_money=current_money,
