@@ -1,4 +1,4 @@
-from warn_user import Warn
+from src.Miscellaneous.warn_user import Warn
 from src.Trade.ProceduresAndCalc.calc_orders import CalcOrders
 from src.Data.high_low_data import HighLowHistory
 

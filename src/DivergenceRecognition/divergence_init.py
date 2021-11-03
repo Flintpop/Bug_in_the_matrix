@@ -1,7 +1,7 @@
 import time
 
-from warn_user import Warn
-from print_and_debug import PrintUser, LogMaster
+from src.Miscellaneous.warn_user import Warn
+from src.Miscellaneous.print_and_debug import PrintUser, LogMaster
 from src.Data.high_low_data import HighLowHistory
 from src.DivergenceRecognition.conditions import StrategyConditions
 from src.Trade.check_results import TradeResults

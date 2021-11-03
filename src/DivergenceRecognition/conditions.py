@@ -1,6 +1,6 @@
 import datetime
 
-from warn_user import Warn
+from src.Miscellaneous.warn_user import Warn
 from src.Data.data_detection_algorithms import Core
 
 
@@ -56,7 +56,7 @@ class StrategyConditions:
             return True
 
     def check_not_same_trade(self):
-        res = False  # Potentials bugs here, i dunno.
+        res = False
         if self.coin.long:
             if self.last_high_low_trade_divergence[0] == self.coin.low_local[len(self.coin.low_local) - 1]:
                 res = True
@@ -82,7 +82,7 @@ class StrategyConditions:
         if self.coin.long:
             last_30_hist = self.coin.data['Hist'].tail(5).values
             divergence = self.divergence_spotter()
-            if last_30_hist[length] > 0 and divergence and last_30_hist[length-1] < 0:
+            if last_30_hist[length] > 0 > last_30_hist[length - 1] and divergence:
                 macd_cross = True
                 self.try_debug_macd_trend()
 
@@ -93,7 +93,7 @@ class StrategyConditions:
         else:
             last_30_hist = self.coin.data['Hist'].tail(5).values
             divergence = self.divergence_spotter()
-            if last_30_hist[length] < 0 and divergence and last_30_hist[length-1] > 0:
+            if last_30_hist[length] < 0 < last_30_hist[length - 1] and divergence:
                 macd_cross = True
                 self.try_debug_macd_trend()
             elif last_30_hist[length] < 0 and divergence and last_30_hist[length-1] < 0:

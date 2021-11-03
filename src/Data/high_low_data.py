@@ -14,6 +14,7 @@ class HighLowHistory(Indicators):
 
         self.list_r = self.high_low_finder_v2()
 
+        # To me this is just addresses copy. It takes near to no time to do.
         self.high_local, self.high_prices_indexes = self.list_r[0], self.list_r[1]
         self.high_wicks, self.high_wicks_indexes = self.list_r[2], self.list_r[3]
         self.high_macd, self.high_macd_indexes = self.list_r[4], self.list_r[5]
@@ -36,14 +37,14 @@ class HighLowHistory(Indicators):
         successive_hist_macd_bull = 0
 
         for i in range(self.study_range - 1):  # Fake bear and bull indexes
-            if last_macd_hist[i] > 0 and fake_macd_trend < 0:
+            if last_macd_hist[i] > 0 > fake_macd_trend:
                 fake_bull.append(i)
                 fake_macd_trend = last_macd_hist[i]
-            elif last_macd_hist[i] < 0 and fake_macd_trend > 0:
+            elif last_macd_hist[i] < 0 < fake_macd_trend:
                 fake_bear.append(i)
                 fake_macd_trend = last_macd_hist[i]
 
-            if last_macd_hist[i] > 0 and macd_trend < 0:  # Bull and bear indexes
+            if last_macd_hist[i] > 0 > macd_trend:  # Bull and bear indexes
                 successive_hist_macd_bear = 0
                 # croise bullish
                 if successive_hist_macd_bull > self.n_plot_macd - 1:
@@ -53,7 +54,7 @@ class HighLowHistory(Indicators):
                     successive_hist_macd_bull = 0
                 else:
                     successive_hist_macd_bull += 1
-            elif last_macd_hist[i] < 0 and macd_trend > 0:
+            elif last_macd_hist[i] < 0 < macd_trend:
                 successive_hist_macd_bull = 0
                 # croise bearish
                 if successive_hist_macd_bear > self.n_plot_macd - 1:

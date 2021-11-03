@@ -7,8 +7,8 @@ import traceback
 
 #####################################################################################
 """
-Version : 1.3.2
-Date : 1 / 11 / 2021
+Version : 1.3.3
+Date : 3 / 11 / 2021
 """
 #####################################################################################
 
@@ -19,7 +19,10 @@ class Program:
         self.client = self.connect()
         settings = Parameters()
 
+        # Init divergence algorithms
         macd_divergence = Divergence(client=self.client, settings=settings)
+        
+        # Launch scan.
         macd_divergence.scan()
 
     # Connect to binance api

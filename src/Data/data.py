@@ -3,9 +3,6 @@ import pandas as pd
 
 from src.Miscellaneous.settings import Parameters
 
-# TODO: Refactor the MACD trend data func, too much code in 1 function
-# TODO: Try to make as much functions as possible.
-
 
 class Data:
     def __init__(self, client, symbol):

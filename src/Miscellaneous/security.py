@@ -1,5 +1,5 @@
 from cryptography.fernet import Fernet
-from print_and_debug import os_path_fix
+from src.Miscellaneous.print_and_debug import os_path_fix
 
 
 class Encrypt:

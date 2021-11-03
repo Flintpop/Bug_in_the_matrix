@@ -1,50 +1,52 @@
 
 class Core:
     @staticmethod
+    # Get all the high_low variation in function of macd crosses
     def finder(index: int, first_indexes: list, second_indexes: list, prices: list, high: bool):
         first_index_search = second_indexes[index]
-        temp_high_low = prices[first_index_search]
-        temp_index = 0
+        high_low_local = prices[first_index_search]
+        h_l_index = 0
         i = 0
         limit = len(prices) - 2
         length = Core.macd_cross_detection(first_indexes, first_index_search, limit) - first_index_search
 
         while i < length and i <= limit:
-            res = Core.comparator_numbers(high, prices[i + first_index_search], temp_high_low)
+            res = Core.comparator_numbers(high, prices[i + first_index_search], high_low_local)
             if res:
-                temp_high_low = prices[i + first_index_search]
-                temp_index = i + first_index_search
+                high_low_local = prices[i + first_index_search]
+                h_l_index = i + first_index_search
             i += 1
 
-        return temp_high_low, temp_index
+        return high_low_local, h_l_index
 
     @staticmethod
-    def comparator_numbers(boolean: bool, element_one, element_two):
+    def comparator_numbers(boolean: bool, x, y):
         if boolean:
-            res = element_one > element_two
+            bool_return = x > y
         else:
-            res = element_one < element_two
-        return res
+            bool_return = x < y
+        return bool_return
 
     @staticmethod
-    def switcher(boolean: bool, first_index, second_index):
+    def switcher(boolean: bool, x, y):
         if boolean:
-            res = first_index, second_index
+            values_switched = x, y
         else:
-            res = second_index, first_index
-        return res
+            values_switched = y, x
+        return values_switched
 
     @staticmethod
+    # Returns index of macd cross after macd_indexes
     def macd_cross_detection(macd_indexes: list, value, max_value=2):
         crossed = False
-        k = 0
-        v = 0
+        macd_index = 0
+        cross_index = 0
         try:
             while not crossed:
-                if macd_indexes[k] > value:
-                    v = macd_indexes[k]
+                if macd_indexes[macd_index] > value:
+                    cross_index = macd_indexes[macd_index]
                     crossed = True
-                k += 1
+                macd_index += 1
         except IndexError:
-            v = max_value
-        return v
+            cross_index = max_value
+        return cross_index
