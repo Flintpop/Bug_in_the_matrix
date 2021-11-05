@@ -2,6 +2,7 @@ import datetime
 
 from src.Miscellaneous.warn_user import Warn
 from src.Data.data_detection_algorithms import Core
+from src.Miscellaneous.settings import Parameters
 
 
 class StrategyConditions:
@@ -10,6 +11,7 @@ class StrategyConditions:
         self.debug = debug_obj
         self.warn = Warn()
         self.divergence_spotted = False
+        self.settings = Parameters()
         self.log = self.warn.logs.add_log
 
         self.last_high_low_trade_divergence = [0, 0]
@@ -149,12 +151,12 @@ class StrategyConditions:
             index = self.coin.bear_indexes[len(self.coin.bear_indexes) - 1]
 
         if self.coin.long:
-            while res and index < self.coin.trade_length:
+            while res and index < self.settings.study_range:
                 if last_macd_data[index] > 0:
                     res = False
                 index += 1
         elif not self.coin.long:
-            while res and index < self.coin.trade_length:
+            while res and index < self.settings.study_range:
                 if last_macd_data[index] < 0:
                     res = False
                 index += 1
