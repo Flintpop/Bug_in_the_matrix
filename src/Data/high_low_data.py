@@ -76,7 +76,7 @@ class HighLowHistory(Indicators):
 
         prices = self.data['close'].tail(self.study_range).values  # Gotta find a workaround to avoid the last unclosed
         # candle.
-        macd = self.data['Hist'].tail(self.study_range).values
+        macd = self.data['MACD'].tail(self.study_range).values
         highs = self.data['high'].tail(self.study_range).values
         lows = self.data['low'].tail(self.study_range).values
 
