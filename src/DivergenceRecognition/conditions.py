@@ -2,6 +2,7 @@ import datetime
 
 from src.Miscellaneous.warn_user import Warn
 from src.Data.data_detection_algorithms import Core
+from src.Miscellaneous.settings import Parameters
 
 
 class StrategyConditions:
@@ -10,6 +11,7 @@ class StrategyConditions:
         self.debug = debug_obj
         self.warn = Warn()
         self.divergence_spotted = False
+        self.settings = Parameters()
         self.log = self.warn.logs.add_log
 
         self.last_high_low_trade_divergence = [0, 0]
@@ -74,8 +76,8 @@ class StrategyConditions:
 
         self.warn.debug_file()
 
+    # This function checks if there is a macd cross while the divergence remain
     def trade_final_checking(self):
-        # TODO: trade_final_checking function could be overhauled to reduce the number of lines.
         last_30_hist = self.coin.data['Hist'].tail(5).values
         length = len(last_30_hist) - 2  # -2 to avoid the non closed last candle.
         macd_cross = False
@@ -89,7 +91,7 @@ class StrategyConditions:
             elif last_30_hist[length] > 0 and divergence and last_30_hist[length-1] > 0:
                 divergence = False
                 macd_cross = True
-                self.raise_value_error_msg()
+                self.check_too_late_divergence()
         else:
             last_30_hist = self.coin.data['Hist'].tail(5).values
             divergence = self.divergence_spotter()
@@ -99,7 +101,7 @@ class StrategyConditions:
             elif last_30_hist[length] < 0 and divergence and last_30_hist[length-1] < 0:
                 divergence = False
                 macd_cross = True
-                self.raise_value_error_msg()
+                self.check_too_late_divergence()
 
         return macd_cross, divergence
 
@@ -131,7 +133,7 @@ class StrategyConditions:
         else:
             self.coin.long = not self.coin.long
 
-    def raise_value_error_msg(self):
+    def check_too_late_divergence(self):
         self.log("\n\nBug in detecting properly the macd cross.\n")
 
         self.log(f"\nIt was a long ? {self.coin.long}")
@@ -139,38 +141,27 @@ class StrategyConditions:
 
         self.log(f'\nThe current coin data is : \n{self.coin.data.tail(30)}')
 
-        # raise ValueError
-
     def macd_line_checker(self):
         last_macd_data = self.coin.data['MACD'].values
-        # Maybe I have to specify dtype
-        if self.coin.long:
-            index = self.coin.low_prices_indexes[len(self.coin.low_prices_indexes) - 2]
-            length, start = self.calculate_length_and_start(self.coin.bull_indexes, self.coin.bear_indexes, index)
-        else:
-            index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 2]
-            length, start = self.calculate_length_and_start(self.coin.bear_indexes, self.coin.bull_indexes, index)
-
         res = True
-        i = 0
 
-        while res and i < length:
-            if self.coin.long and last_macd_data[i + start] > 0:
-                res = False
-            elif not self.coin.long and last_macd_data[i + start] < 0:
-                res = False
-            i += 1
+        if self.coin.long:
+            index = self.coin.bull_indexes[len(self.coin.bull_indexes) - 1]
+        else:
+            index = self.coin.bear_indexes[len(self.coin.bear_indexes) - 1]
+
+        if self.coin.long:
+            while res and index < self.settings.study_range:
+                if last_macd_data[index] > 0:
+                    res = False
+                index += 1
+        elif not self.coin.long:
+            while res and index < self.settings.study_range:
+                if last_macd_data[index] < 0:
+                    res = False
+                index += 1
 
         return res
-
-    @staticmethod
-    def calculate_length_and_start(a, b, index):
-        start = Core.macd_cross_detection(a, index)
-        end = Core.macd_cross_detection(b, start)
-
-        length = end - start
-
-        return length, start
 
     def actualize_data(self, coin, debug_obj):
         self.coin = coin
