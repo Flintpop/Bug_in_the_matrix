@@ -106,7 +106,7 @@ class Divergence:
                                            f"\n\nThe traceback is : "
                                            f"\n\n\n{traceback.format_exc()}")
                     word_mail = f"Bot stopped !\n" \
-                                f"Here is the current small error msg : {e}" \
+                                f"Here is the current small error msg : {e}\n\n" \
                                 f"Here is the traceback : \n\n" \
                                 f"{traceback.format_exc()}"
                     send_email(word=word_mail, subject=f"Scan error in the market "
