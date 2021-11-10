@@ -51,7 +51,7 @@ class CalcOrders:
         enter_price_index = len(prices) - 2
         entry_price = prices[enter_price_index]
 
-        return float(entry_price), int(enter_price_index)
+        return entry_price, enter_price_index
 
     def take_profit_calc(self, enter_price, stop_loss):
         if self.coin.long:
@@ -66,11 +66,11 @@ class CalcOrders:
         low_l = len(self.coin.low_wicks) - 1
         high_l = len(self.coin.high_wicks) - 1
         if self.coin.long:
-            buffer = float(self.coin.low_wicks[low_l]) * self.buffer
-            stop_loss = float(self.coin.low_wicks[low_l]) - buffer
+            buffer = self.coin.low_wicks[low_l] * self.buffer
+            stop_loss = self.coin.low_wicks[low_l] - buffer
         else:
-            buffer = float(self.coin.high_wicks[high_l]) * self.buffer
-            stop_loss = float(self.coin.high_wicks[high_l]) + buffer
+            buffer = self.coin.high_wicks[high_l] * self.buffer
+            stop_loss = self.coin.high_wicks[high_l] + buffer
         print("The stop loss is : " + str(stop_loss))
         stop_loss.__round__()
 

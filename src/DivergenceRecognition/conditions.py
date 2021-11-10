@@ -54,10 +54,10 @@ class MacdDivergenceConditions:
         if self.coin.long and word == 'long' or not self.coin.long and word == 'short':
             local_length = len(local) - 1
             macd_length = len(macd) - 1
-            divergence = Core.comparator_numbers(self.coin.long, float(local[local_length - 1]),
-                                                 float(local[local_length])) \
-                         and Core.comparator_numbers(self.coin.long, float(macd[macd_length]),
-                                                     float(macd[macd_length - 1]))
+            divergence = Core.comparator_numbers(self.coin.long, local[local_length - 1],
+                                                 local[local_length]) \
+                         and Core.comparator_numbers(self.coin.long, macd[macd_length],
+                                                     macd[macd_length - 1])
             if divergence:
                 if self.coin.long:
                     self.current_trade_spec["delta_price"] = 1 - local[local_length] / local[local_length - 1]
