@@ -66,7 +66,7 @@ class Divergence:
                     same_trade = self.conditions[symbol].check_not_same_trade()
                     is_obsolete = self.conditions[symbol].is_obsolete()
 
-                    # WARNING MIGHT CREATE BUGS RELATED TO DETECTION
+                    # WARNING MIGHT CREATE BUGS RELATED TO DETECTION | nothing so far I guess ?
                     if self.macd_line_mode:
                         good_macd_pos = self.conditions[symbol].macd_line_checker()
                     else:
@@ -105,10 +105,10 @@ class Divergence:
                                            f"\n\n{e}"
                                            f"\n\nThe traceback is : "
                                            f"\n\n\n{traceback.format_exc()}")
-                    word_mail = f"Bot stopped !\n" \
-                                f"Here is the current small error msg : {e}\n\n" \
-                                f"Here is the traceback : \n\n" \
-                                f"{traceback.format_exc()}"
+                    word_mail = f"<h3>Bot stopped !</h3>" \
+                                f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
+                                f"<p>Here is the traceback : </p>" \
+                                f"<p>{traceback.format_exc()}</p>"
                     send_email(word=word_mail, subject=f"Scan error in the market "
                                                        f"{self.debugs[symbol].get_current_trade_symbol(symbol)}")
 
