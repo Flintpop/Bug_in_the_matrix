@@ -137,7 +137,7 @@ class CalcOrders:
 
                 self.log(f"The leverage before round is : {leverage} and after : {leverage.__round__()}")
                 leverage = leverage.__round__()
-                if money_traded > self.settings.lowest_money_binance and leverage > 1:
+                if money_traded > self.settings.lowest_money_binance and leverage >= 1:
                     quantity = (money_traded / self.entry_price) * leverage
 
                     count = 1

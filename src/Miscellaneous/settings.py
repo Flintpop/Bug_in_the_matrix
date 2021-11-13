@@ -18,7 +18,7 @@ class Parameters:
         self.threshold_risk_trade = 2
         self.delta_price_buffer = 0.0038
 
-        self.market_symbol_list = ('BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT')
+        self.market_symbol_list = ['BTCUSDT']
         self.lowest_quantity = (0.001, 0.001, 0.01, 1.0)
         self.maximum_leverage = (125, 100, 75, 75)
         self.lowest_money_binance = 10.0
