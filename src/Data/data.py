@@ -35,5 +35,9 @@ class Data:
         data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',
                         'taker_base_vol', 'taker_quote_vol', 'is_best_match']
         data['open_date_time'] = [dt.datetime.fromtimestamp(x / 1000) for x in data.open_time]
-        data = data[['open_date_time', 'open', 'high', 'low', 'close', 'volume']]
+        data = data[['open_date_time', 'open', 'high', 'low', 'close']]
+        data['open'] = [float(x) for x in data['open']]
+        data['high'] = [float(x) for x in data['high']]
+        data['low'] = [float(x) for x in data['low']]
+        data['close'] = [float(x) for x in data['close']]
         return data

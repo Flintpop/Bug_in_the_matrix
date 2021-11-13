@@ -3,7 +3,7 @@ import time
 from src.Miscellaneous.warn_user import Warn
 from src.Miscellaneous.print_and_debug import PrintUser, LogMaster
 from src.Data.high_low_data import HighLowHistory
-from src.DivergenceRecognition.conditions import StrategyConditions
+from src.DivergenceRecognition.conditions import MacdDivergenceConditions
 from src.Trade.check_results import TradeResults
 from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 from src.Miscellaneous.settings import Parameters
@@ -31,7 +31,7 @@ class Divergence:
             current_coin = self.coins[symbol]
             self.debugs.append(PrintUser(current_coin))
             current_debug = self.debugs[symbol]
-            self.conditions.append(StrategyConditions(current_coin, current_debug))
+            self.conditions.append(MacdDivergenceConditions(current_coin, current_debug))
 
         self.log_master = LogMaster()
 
@@ -44,6 +44,14 @@ class Divergence:
 
         self.wait = 285
         self.fast_wait = 5
+
+        self.current_trade_spec = {
+            "delta_price": float,
+            "delta_macd": float,
+            "delta_ema": float,
+            "raw_percentage_risked": float,
+            "leverage": int
+        }
 
         self.warn.logs.add_log("\n\nBot initialized !")
 
@@ -58,14 +66,14 @@ class Divergence:
                     same_trade = self.conditions[symbol].check_not_same_trade()
                     is_obsolete = self.conditions[symbol].is_obsolete()
 
-                    # WARNING MIGHT CREATE BUGS RELATED TO DETECTION
+                    # WARNING MIGHT CREATE BUGS RELATED TO DETECTION | nothing so far I guess ?
                     if self.macd_line_mode:
                         good_macd_pos = self.conditions[symbol].macd_line_checker()
                     else:
                         good_macd_pos = True
 
                     if divergence and not same_trade and not is_obsolete and good_macd_pos and not \
-                            self.conditions[symbol].coin.long:
+                            self.conditions[symbol].coin.long and not self.coins[symbol].long:
                         self.warn.logs.add_log(f"\n\nFor "
                                                f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                         self.conditions[symbol].init_trade_final_checking()
@@ -78,11 +86,12 @@ class Divergence:
                                 good_macd_pos = self.conditions[symbol].macd_line_checker()
                             else:
                                 good_macd_pos = True
-
-                        if crossed and divergence and good_macd_pos:
+                        threshold = self.conditions[symbol].threshold_check()
+                        if crossed and divergence and good_macd_pos and threshold:
                             self.init_trade(symbol)
                         else:
-                            self.debugs[symbol].print_trade_aborted(crossed, divergence, good_macd_pos, symbol)
+                            self.debugs[symbol].print_trade_aborted(crossed, divergence, good_macd_pos, symbol,
+                                                                    threshold)
 
                     if self.download_mode:
                         self.update(symbol, wait_exception=1800)  # Update indicators and data.
@@ -96,10 +105,10 @@ class Divergence:
                                            f"\n\n{e}"
                                            f"\n\nThe traceback is : "
                                            f"\n\n\n{traceback.format_exc()}")
-                    word_mail = f"Bot stopped !\n" \
-                                f"Here is the current small error msg : {e}" \
-                                f"Here is the traceback : \n\n" \
-                                f"{traceback.format_exc()}"
+                    word_mail = f"<h3>Bot stopped !</h3>" \
+                                f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
+                                f"<p>Here is the traceback : </p>" \
+                                f"<p>{traceback.format_exc()}</p>"
                     send_email(word=word_mail, subject=f"Scan error in the market "
                                                        f"{self.debugs[symbol].get_current_trade_symbol(symbol)}")
 

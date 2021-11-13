@@ -101,12 +101,13 @@ class PrintUser:
         self.data_range = coin.data_range
         self.study_range = coin.study_range
 
-    def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol):
+    def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol, threshold):
         self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol)} "
                        f"because of : \n"
-                       f"- crossed ? | {crossed}"
-                       f"\n- divergence ? | {divergence}"
-                       f"\n- good_macd_pos ? | {good_macd_pos}")
+                       f"- crossed ? |         {crossed}"
+                       f"\n- divergence ? |    {divergence}"
+                       f"\n- good_macd_pos ? | {good_macd_pos}"
+                       f"\n- threshold ? |     {threshold}")
 
     def debug_macd_trend_data(self, bull_indexes, bear_indexes, fake_bull, fake_bear):
         bearish_time = []

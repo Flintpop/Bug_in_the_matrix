@@ -5,7 +5,7 @@ from src.Data.data_detection_algorithms import Core
 from src.Miscellaneous.settings import Parameters
 
 
-class StrategyConditions:
+class MacdDivergenceConditions:
     def __init__(self, coin, debug_obj):
         self.coin = coin
         self.debug = debug_obj
@@ -14,7 +14,21 @@ class StrategyConditions:
         self.settings = Parameters()
         self.log = self.warn.logs.add_log
 
+        self.current_trade_spec = {
+            "delta_price": float,
+            "delta_macd": float,
+            "delta_ema": float,
+            "raw_percentage_risked": float,
+            "leverage": int
+        }
+
         self.last_high_low_trade_divergence = [0, 0]
+
+    def threshold_check(self):
+        pass_test = False
+        if self.settings.delta_price_buffer < self.current_trade_spec["delta_price"]:
+            pass_test = True
+        return pass_test
 
     def divergence_spotter(self):
         data = self.coin
@@ -38,8 +52,17 @@ class StrategyConditions:
             self.short_long_check(len(indexes) - 1, indexes)
 
         if self.coin.long and word == 'long' or not self.coin.long and word == 'short':
-            divergence = Core.comparator_numbers(self.coin.long, local[len(local) - 2], local[len(local) - 1]) \
-                     and Core.comparator_numbers(self.coin.long, macd[len(macd) - 1], macd[len(macd) - 2])
+            local_length = len(local) - 1
+            macd_length = len(macd) - 1
+            divergence = Core.comparator_numbers(self.coin.long, local[local_length - 1],
+                                                 local[local_length]) \
+                         and Core.comparator_numbers(self.coin.long, macd[macd_length],
+                                                     macd[macd_length - 1])
+            if divergence:
+                if self.coin.long:
+                    self.current_trade_spec["delta_price"] = 1 - local[local_length] / local[local_length - 1]
+                else:
+                    self.current_trade_spec["delta_price"] = 1 - local[local_length - 1] / local[local_length]
 
         return divergence
 
@@ -76,7 +99,7 @@ class StrategyConditions:
 
         self.warn.debug_file()
 
-    # This function checks if there is a macd cross while the divergence remain
+    # This function checks if there is a macd cross while the divergence remains true
     def trade_final_checking(self):
         last_30_hist = self.coin.data['Hist'].tail(5).values
         length = len(last_30_hist) - 2  # -2 to avoid the non closed last candle.
@@ -88,7 +111,7 @@ class StrategyConditions:
                 macd_cross = True
                 self.try_debug_macd_trend()
 
-            elif last_30_hist[length] > 0 and divergence and last_30_hist[length-1] > 0:
+            elif last_30_hist[length] > 0 and divergence and last_30_hist[length - 1] > 0:
                 divergence = False
                 macd_cross = True
                 self.check_too_late_divergence()
@@ -98,7 +121,7 @@ class StrategyConditions:
             if last_30_hist[length] < 0 < last_30_hist[length - 1] and divergence:
                 macd_cross = True
                 self.try_debug_macd_trend()
-            elif last_30_hist[length] < 0 and divergence and last_30_hist[length-1] < 0:
+            elif last_30_hist[length] < 0 and divergence and last_30_hist[length - 1] < 0:
                 divergence = False
                 macd_cross = True
                 self.check_too_late_divergence()
@@ -115,7 +138,7 @@ class StrategyConditions:
             print(self.debug)
             print(self.coin.data)
 
-    def buy_sell(self, index):
+    def buy_sell(self, index):  # TODO: Put a delta_ema here
         ema_trend = self.coin.ema_trend.tail(self.coin.study_range).values
         ema_fast = self.coin.ema_fast.tail(self.coin.study_range).values
         res = False
