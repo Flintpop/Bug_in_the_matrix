@@ -43,7 +43,7 @@ def send_email(word, subject="Update in your project"):
 
 class Watch:
     def __init__(self):
-        self.wait = 600
+        self.wait = 10000
         print("WatchTowerLaunched !")
         self.file = open("Output/debug_file.txt", "r")
         self.watch_tower()

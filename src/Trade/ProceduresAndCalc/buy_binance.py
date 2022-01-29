@@ -1,6 +1,7 @@
 from src.Trade.ProceduresAndCalc.calc_orders import CalcOrders
 import time
 
+
 class BinanceOrders(CalcOrders):
     def __init__(self, coin, client, log, lowest_quantity):
         super().__init__(coin, client, log, lowest_quantity)
@@ -69,9 +70,10 @@ class BinanceOrders(CalcOrders):
         for symbol_string in symbols_string:
             self.client.futures_cancel_all_open_orders(symbol=symbol_string)
 
+
 if __name__ == '__main__':
     from src.Main.main import Program
-    connect = Program.connect()
+    connect = Program.connect_to_api()
 
     # connect.futures_create_order(symbol="ADAUSDT",
     #                                  type="MARKET",

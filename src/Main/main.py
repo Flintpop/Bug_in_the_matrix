@@ -1,14 +1,14 @@
 from binance.client import Client
 
-from src.DivergenceRecognition.divergence_init import Divergence
+from src.Strategies.EmaFractalsRecognition.ema_fractals_init import EmaFractalsInit
 from src.Miscellaneous.security import GetData
 from src.Miscellaneous.settings import Parameters
 import traceback
 
 #####################################################################################
 """
-Version : 1.3.9
-Date : 13 / 11 / 2021
+Version : 2.0b
+Date : 29 / 01 / 2022
 """
 #####################################################################################
 
@@ -16,18 +16,18 @@ Date : 13 / 11 / 2021
 class Program:
     def __init__(self):
         # Get the decryption key
-        self.client = self.connect()
+        self.client = self.connect_to_api()
         settings = Parameters()
 
         # Init divergence algorithms
-        macd_divergence = Divergence(client=self.client, settings=settings)
-        
+        ema_fractals = EmaFractalsInit(client=self.client, settings=settings)
+
         # Launch scan.
-        macd_divergence.scan()
+        ema_fractals.scan()
 
     # Connect to binance api
     @staticmethod
-    def connect():
+    def connect_to_api():
         successful_login = False
         client = None
         while not successful_login:

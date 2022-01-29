@@ -3,7 +3,7 @@ import time
 from src.Miscellaneous.warn_user import Warn
 from src.Miscellaneous.print_and_debug import PrintUser, LogMaster
 from src.Data.high_low_data import HighLowHistory
-from src.DivergenceRecognition.conditions import MacdDivergenceConditions
+from src.Strategies.DivergenceRecognition.conditions import MacdDivergenceConditions
 from src.Trade.check_results import TradeResults
 from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 from src.Miscellaneous.settings import Parameters
@@ -27,11 +27,11 @@ class Divergence:
         self.macd_line_mode = settings.macd_line_mode
 
         for symbol in range(self.n_coin):
-            self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[symbol]))
+            self.coins.append(HighLowHistory(self.client, settings.market_symbol_list[symbol], symbol))
             current_coin = self.coins[symbol]
             self.debugs.append(PrintUser(current_coin))
             current_debug = self.debugs[symbol]
-            self.conditions.append(MacdDivergenceConditions(current_coin, current_debug))
+            self.conditions.append(MacdDivergenceConditions(current_coin, current_debug, symbol))
 
         self.log_master = LogMaster()
 
@@ -42,6 +42,7 @@ class Divergence:
 
         self.warn.debug_file()
 
+        # Wait in seconds
         self.wait = 285
         self.fast_wait = 5
 
@@ -78,7 +79,7 @@ class Divergence:
                                                f"{self.debugs[symbol].get_current_trade_symbol(symbol_index=symbol)}")
                         self.conditions[symbol].init_trade_final_checking()
 
-                        # Check the final indicators compliance.
+                        # Check the final indicators' compliance.
                         while not crossed and divergence and good_macd_pos:
                             self.update(symbol, update_type="fast")
                             crossed, divergence = self.conditions[symbol].trade_final_checking()
@@ -98,7 +99,7 @@ class Divergence:
                 except Exception as e:
                     stopped = True
 
-                    from src.WatchTower import send_email
+                    from src.watch_tower import send_email
                     import traceback
 
                     self.warn.logs.add_log(f"\n\n\nCRITICAL ERROR : Bot stopped !"
@@ -140,13 +141,8 @@ class Divergence:
 
         if binance.leverage > 0 and self.settings.maximum_leverage[index_symbol] > binance.quantity > 0:
             log("\n\nTrade in going !")
-            PrintUser.debug_trade_parameters(
-                self=self.debugs[index_symbol],
-                long=self.coins[index_symbol].long,
-                sl=binance.stop_loss,
-                tp=binance.take_profit,
-                entry_price=binance.entry_price,
-                entry_price_index=self.coins[index_symbol].study_range - 2,
+            self.debugs[index_symbol].debug_trade_parameters(
+                trade=self.coins[index_symbol],
                 symbol=string_symbol
             )
 

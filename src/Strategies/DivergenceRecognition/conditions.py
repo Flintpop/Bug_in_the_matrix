@@ -6,13 +6,14 @@ from src.Miscellaneous.settings import Parameters
 
 
 class MacdDivergenceConditions:
-    def __init__(self, coin, debug_obj):
+    def __init__(self, coin, debug_obj, index):
         self.coin = coin
         self.debug = debug_obj
         self.warn = Warn()
         self.divergence_spotted = False
         self.settings = Parameters()
         self.log = self.warn.logs.add_log
+        self.market_index = index
 
         self.current_trade_spec = {
             "delta_price": float,
@@ -26,7 +27,7 @@ class MacdDivergenceConditions:
 
     def threshold_check(self):
         pass_test = False
-        if self.settings.delta_price_buffer < self.current_trade_spec["delta_price"]:
+        if self.settings.delta_price_buffer[self.market_index] < self.current_trade_spec["delta_price"]:
             pass_test = True
         return pass_test
 

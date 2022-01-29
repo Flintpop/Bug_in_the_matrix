@@ -1,10 +1,9 @@
 from src.Miscellaneous.warn_user import Warn
 from src.Trade.ProceduresAndCalc.calc_orders import CalcOrders
-from src.Data.high_low_data import HighLowHistory
 
 
 class TradeResults:
-    def __init__(self, coin: HighLowHistory, debug_obj):
+    def __init__(self, coin, debug_obj):
         self.coin = coin
         self.debug = debug_obj
 
@@ -44,8 +43,8 @@ class TradeResults:
         # See if the position is closed, and if it is lost or won.
 
         # Get the data
-        low_wicks = self.coin.data['low'].tail(5).values
-        high_wicks = self.coin.data['high'].tail(5).values
+        low_wicks = self.coin.data['low'].tail(3).values
+        high_wicks = self.coin.data['high'].tail(3).values
         last_open_time = self.coin.data['open_date_time'].tail(2).values
 
         target_hit = False

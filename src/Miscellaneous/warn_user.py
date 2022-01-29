@@ -1,6 +1,6 @@
 import datetime
 
-from src.WatchTower import send_email
+from src.watch_tower import send_email
 from src.Miscellaneous.print_and_debug import os_path_fix, LogMaster
 
 
@@ -47,6 +47,7 @@ class Warn:
         f = open(debug_file_path, "w+")
         f.write("File created at : " + str(datetime.datetime.now()))
         f.close()
+
 
 if __name__ == '__main__':
     warn = Warn()

@@ -98,8 +98,6 @@ class PrintUser:
 
     def actualize_data(self, coin):
         self.data = coin.data
-        self.data_range = coin.data_range
-        self.study_range = coin.study_range
 
     def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol, threshold):
         self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol)} "
@@ -151,14 +149,14 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, sl, tp, entry_price, entry_price_index, long, symbol):
+    def debug_trade_parameters(self, trade, symbol):
         log = self.logs.add_log
-        date = PrintUser.get_time(self, entry_price_index)
+        date = PrintUser.get_time(self, trade.entry_price_index)
 
-        log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol} market")
-        log(f"\nThe entry price is : {entry_price} at : {date}")
-        log(f"\nThe stop loss is : {sl}")
-        log(f"\nThe take profit is : {tp}")
+        log(f"\n\n\nIt is a {self.trade_type_string(trade.long)} for the {symbol} market")
+        log(f"\nThe entry price is : {trade.entry_price} at : {date}")
+        log(f"\nThe stop loss is : {trade.sl}")
+        log(f"\nThe take profit is : {trade.tp}")
 
     def get_current_trade_symbol(self, symbol_index):
         return self.settings.market_symbol_list[symbol_index]

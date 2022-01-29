@@ -5,7 +5,7 @@ from src.Miscellaneous.settings import Parameters
 
 
 class Data:
-    def __init__(self, client, symbol):
+    def __init__(self, client, symbol, symbol_index):
         settings = Parameters()
         self.symbol = symbol
         self.client = client
@@ -13,24 +13,34 @@ class Data:
 
         self.data_range = settings.data_range
         self.study_range = settings.study_range
-        self.n_plot_macd = settings.n_plot_macd
+        self.n_plot_macd = settings.n_plot_macd[symbol_index]
 
-        self.data = Data.download_data(self)
+        self.settings = settings
+
+        self.data = self.download_data()
 
     def download_data(self):
         if self.interval_unit == '5T':
             start_min = (self.data_range + 1) * 5
             start_str = str(start_min) + ' minutes ago UTC'
-            interval_data = '5m'
 
-            data = self.data_download(start_str, interval_data)
+            data = self.data_download(start_str)
+        elif self.interval_unit == '1h':
+            start_min = (self.data_range + 1)
+            start_str = str(start_min) + ' hours ago UTC'
 
-            return data
+            data = self.data_download(start_str)
+        else:
+            print("ERROR : Value of interval unit not specified in download_data in Data object function.")
+            raise ValueError
 
-    def data_download(self, start_str, interval_data):
+        return data
+
+    def data_download(self, start_str):
+        print("In download data")
         data = pd.DataFrame(
             self.client.futures_historical_klines(symbol=self.symbol, start_str=start_str,
-                                                  interval=interval_data))
+                                                  interval=self.interval_unit))
 
         data.columns = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'qav', 'num_trades',
                         'taker_base_vol', 'taker_quote_vol', 'is_best_match']

@@ -1,11 +1,10 @@
 from src.Miscellaneous.warn_user import Warn
 from src.Miscellaneous.settings import Parameters
-from src.Data.high_low_data import HighLowHistory
 import datetime
 
 
 class CalcOrders:
-    def __init__(self, coin: HighLowHistory, client, log, lowest_quantity):
+    def __init__(self, coin, client, log, lowest_quantity):
         self.settings = Parameters()
         self.warn = Warn()
 
@@ -33,21 +32,25 @@ class CalcOrders:
 
         self.quantity, self.leverage = 0, 0
 
-    def init_calculations(self):
+    def init_calculations(self, strategy="divergence"):
         if not self.trade_in_going:
             self.entry_price, self.entry_price_index = self.entry_price_calc()
-            self.stop_loss = CalcOrders.stop_loss_calc(self)
-            self.take_profit = CalcOrders.take_profit_calc(self, self.entry_price, self.stop_loss)
+            if strategy == "divergence":
+                self.stop_loss = self.stop_loss_calc()
+            elif strategy == "ema_fractals":
+                self.stop_loss = self.stop_loss_calc_ema_fractals()
+            self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
 
             self.trade_in_going = True
+            self.get_quantity_leverage()
 
-            self.current_balance = float(self.infos["totalMarginBalance"])
-            self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
-
-            self.quantity, self.leverage = self.lev_quant_calc(self.balance_available)
+    def get_quantity_leverage(self):
+        self.current_balance = float(self.infos["totalMarginBalance"])
+        self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
+        self.quantity, self.leverage = self.lev_quant_calc(self.balance_available)
 
     def entry_price_calc(self):
-        prices = self.coin.data['close'].tail(10).values
+        prices = self.coin.data['close'].tail(2).values
         enter_price_index = len(prices) - 2
         entry_price = prices[enter_price_index]
 
@@ -74,14 +77,66 @@ class CalcOrders:
         print("The stop loss is : " + str(stop_loss))
         stop_loss.__round__()
 
-        if (stop_loss > self.entry_price and self.coin.long) or (stop_loss < self.entry_price and not self.coin.long):
-            self.log("Fatal error, could not calculate properly the stop loss; due likely to self.high/low_wicks "
-                     "to not be correct.")
-            long_word = self.warn.trade_type_string(self.coin.long)
-            self.log(f"It was a {long_word}\n High wicks : {self.coin.high_wicks}\n Low wicks : {self.coin.low_wicks}\n"
-                     f"Data : \n{self.coin.data}\n At : {datetime.datetime.now()}\n")
-            raise ValueError
+        self.check_sl(stop_loss)
         return int(stop_loss)
+
+    def stop_loss_calc_ema_fractals(self):
+        data, error = self.coin.data.loc, False
+        i = self.settings.study_range - 2
+        low = data[i, 'low']
+        high = data[i, 'high']
+        stop_loss = 0
+
+        if self.coin.long:
+            if low > data[i, 'ema100']:
+                if data[i, 'ema20'] > low > data[i, 'ema50']:
+                    stop_loss = data[i + 2, 'ema50']
+                elif low < data[i, 'ema20'] and low < data[i, 'ema50']:
+                    stop_loss = data[i + 2, 'ema100']
+                else:
+                    print("Error in stop loss calculation")
+                    error = True
+            else:
+                print("Trade cancelled ! Wrong candle position related to 100 ema")
+                error = True
+        else:
+            if high < data[i, 'ema100']:
+                if data[i, 'ema20'] < high < data[i, 'ema50']:
+                    stop_loss = data[i + 2, 'ema50']
+                elif high > data[i, 'ema20'] and high > data[i, 'ema50']:
+                    stop_loss = data[i + 2, 'ema100']
+                else:
+                    print("Error in stop loss calculation")
+                    error = True
+            else:
+                print("Trade cancelled ! Wrong candle position related to 100 ema")
+                error = True
+
+        if not error:
+            self.check_sl(stop_loss=stop_loss)
+            if self.coin.long:
+                stop_loss -= self.buffer * stop_loss
+            else:
+                stop_loss += self.buffer * stop_loss
+
+        return int(stop_loss)
+
+    def check_sl(self, stop_loss):
+        if (stop_loss > self.entry_price and self.coin.long) or (stop_loss < self.entry_price and not self.coin.long):
+            print(f"It was a long ? | {self.coin.long}")
+            print(f"The entry price is : {self.entry_price}")
+            try:
+                print(f'Debug data lows : \n{self.coin.low_wicks}')
+                print(f'Debug data highs : \n{self.coin.high_wicks}')
+            except Exception as e:
+                print("May not be the divergence strategy")
+                print(e)
+            print(f"The stop loss was : {stop_loss} and the entry_price : {self.entry_price}")
+            import pandas
+            with pandas.option_context('display.max_columns', None):  # more options can be specified also
+                print(f"The last prices were : \n{self.coin.data}")
+            raise print("Fatal error, could not calculate properly the stop loss; due to self.high/low_wicks "
+                        "to not be correct.")
 
     def add_to_trade_history(self, symbol, trade_type, win, time_pos_open, time_pos_hit, money, debug):
         end_money = money
@@ -118,8 +173,8 @@ class CalcOrders:
             leverage = 0
             quantity = 0
         else:
-            # If the minimum possible of what I can afford to loose is superior to the maximum of what I
-            # can afford to loose, trade cancelled.
+            # If the minimum possible of what I can afford to lose is superior to the maximum of what I
+            # can afford to lose, trade cancelled.
             if (lowest_entry_price_trade * (percentage_risked_trade / 100)) > \
                     (self.balance_available * (self.settings.risk_per_trade / 100)) and leverage <= 1:
                 leverage = 0
@@ -168,7 +223,7 @@ class CalcOrders:
 
                     self.log("\nThe leverage is : " + str(leverage))
                     self.log("\nMaximum loss of current trade : " +
-                             str(float(leverage * percentage_risked_trade / quotient_div_money).__round__()) + " %")
+                             str(float(leverage * percentage_risked_trade / quotient_div_money).__round__(2)) + " %")
                     self.log("\nThe quantity is : " + str(quantity))
 
                     quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
