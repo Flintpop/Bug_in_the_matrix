@@ -1,11 +1,11 @@
 import time
 
-from settings import Parameters
+from src.Miscellaneous.settings import Parameters
 from src.Data.indicators import Indicators
 from src.Miscellaneous.print_and_debug import PrintUser, LogMaster
 from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 from src.Trade.check_results import TradeResults
-from warn_user import Warn
+from src.Miscellaneous.warn_user import Warn
 
 # OLD to do : - Clean all errors ✔️
 #  - Make the necessary objects compatible with this strategy (check target function for exemple) ✔️
@@ -50,9 +50,6 @@ class EmaFractalsInit:
         stopped = False
         while not stopped:
             try:
-                print(self.data)
-                print(self.data.loc[self.last_closed_candle_index, "close"])
-                print(self.data.loc[self.last_closed_candle_index, "open_date_time"])
                 self.update()
                 self.check_emas()
                 self.william_signal = False

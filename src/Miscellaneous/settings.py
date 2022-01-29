@@ -10,8 +10,7 @@ class Parameters:
         # Trade related
         self.risk_ratio = 1
         self.risk_per_trade_brut = 12
-        self.buffer = 0.0002
-        self.fees = 0.0048
+        self.buffer = 0.0048
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100
 
         # EmaFractals trade related
@@ -32,6 +31,7 @@ class Parameters:
         self.market_symbol_list = ['BTCUSDT']
         self.lowest_quantity = (0.001, 0.001, 0.01, 1.0)
         self.maximum_leverage = (125, 100, 75, 75)
+        self.fees = 0.000_4
         self.lowest_money_binance = 10.0
 
         # Detection related
