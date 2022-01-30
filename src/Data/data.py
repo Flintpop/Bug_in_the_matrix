@@ -19,6 +19,8 @@ class Data:
 
         self.data = self.download_data()
 
+        print("Bot initialized !")
+
     def download_data(self):
         if self.interval_unit == '5T':
             start_min = (self.data_range + 1) * 5
@@ -37,7 +39,6 @@ class Data:
         return data
 
     def data_download(self, start_str):
-        print("In download data")
         data = pd.DataFrame(
             self.client.futures_historical_klines(symbol=self.symbol, start_str=start_str,
                                                   interval=self.interval_unit))

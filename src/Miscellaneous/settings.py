@@ -1,16 +1,15 @@
 
 class Parameters:
     def __init__(self):
-
         # Data related
         self.interval_unit = '1h'
-        self.data_range = 100  # Min is 600 cuz ema.
+        self.data_range = 75
         self.study_range = self.data_range
 
         # Trade related
         self.risk_ratio = 1
-        self.risk_per_trade_brut = 12
-        self.buffer = 0.0048
+        self.risk_per_trade_brut = 18
+        self.buffer = 0.0045
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100
 
         # EmaFractals trade related

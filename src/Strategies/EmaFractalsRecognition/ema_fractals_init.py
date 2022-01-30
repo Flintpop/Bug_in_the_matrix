@@ -47,6 +47,7 @@ class EmaFractalsInit:
         self.fast_wait = 1700
 
     def scan(self):
+        log = self.warn.logs.add_log
         stopped = False
         while not stopped:
             try:
@@ -65,6 +66,7 @@ class EmaFractalsInit:
 
                             william_long, william_short = self.check_william_signal()
                             if (self.long and william_long) or (not self.long and william_short):
+                                log("\n\nWilliam signal on and price pulled back on ema !")
                                 self.indicators.long = self.long
                                 self.william_signal = True
                             else:
@@ -110,6 +112,7 @@ class EmaFractalsInit:
     def init_trade(self):
         self.warn.debug_file()
         log = self.warn.logs.add_log
+        log("\n\nInitiating trade procedures...")
         binance = BinanceOrders(
             coin=self,
             client=self.client,
@@ -119,6 +122,7 @@ class EmaFractalsInit:
         self.debug.actualize_data(self)
 
         binance.init_calculations(strategy="ema_fractals")
+        log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
 
         if binance.leverage > 0 and binance.quantity > 0.0:
             self.debug.debug_trade_parameters(
@@ -147,7 +151,7 @@ class EmaFractalsInit:
                         self.update()
                         trade_results.update(self, self.debug)
             except Exception as e:
-                log("\n\nWARNING : Binance procedures failed !\n\n")
+                log("\n\nWARNING CRITICAL : Binance procedures failed !\n\n")
                 log(e)
                 log(f"\n\n\ntraceback.format_exc")
                 binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)

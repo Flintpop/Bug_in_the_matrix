@@ -88,5 +88,4 @@ if __name__ == '__main__':
                                      type="MARKET",
                                      quantity=5,
                                      side="SELL",
-                                     positionSide="LONG"
-                                     )
+                                     positionSide="LONG")
