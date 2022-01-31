@@ -57,6 +57,7 @@ class EmaFractalsInit:
                 if self.ema_right_pos and self.long:
                     self.check_price_not_touching()
                     if self.price_far_from_ema:
+                        log("\n\nPrice far from ema !")
                         while self.price_far_from_ema:
                             self.check_price_not_touching()
                             self.update()
@@ -151,11 +152,19 @@ class EmaFractalsInit:
                         self.update()
                         trade_results.update(self, self.debug)
             except Exception as e:
-                log("\n\nWARNING CRITICAL : Binance procedures failed !\n\n")
+                from src.watch_tower import send_email
+                import traceback
+                log("\n\nWARNING CRITICAL : Binance procedures failed ! Closing all position...\n\n")
                 log(e)
                 log(f"\n\n\ntraceback.format_exc")
                 binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
                 binance.close_pos(symbol_string="BTCUSDT")
+                log("\n\n\nPositions closed.")
+                word_mail = f"<h3>Bot stopped !</h3>" \
+                            f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
+                            f"<p>Here is the traceback : </p>" \
+                            f"<p>{traceback.format_exc()}</p>"
+                send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
         else:
             log("\nTrade aborted because of leverage of quantity set to 0 !")
 
