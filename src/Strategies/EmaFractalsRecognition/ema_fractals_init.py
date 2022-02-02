@@ -131,8 +131,8 @@ class EmaFractalsInit:
                 symbol="BTCUSDT"
             )
             try:
-                binance.open_trade(symbol="BTCUSDT")
-                binance.place_sl_and_tp(symbol="BTCUSDT")
+                # binance.open_trade(symbol="BTCUSDT")
+                # binance.place_sl_and_tp(symbol="BTCUSDT")
                 log("\nOrders placed and position open !")
                 infos = self.client.futures_account()
 
@@ -215,7 +215,7 @@ class EmaFractalsInit:
 
         while not updated:
             try:
-                self.indicators.download_data()
+                self.indicators.data = self.indicators.download_data()
                 self.indicators.actualize_data_ema_fractals()
                 self.data = self.indicators.data
                 updated = True
