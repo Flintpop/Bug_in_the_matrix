@@ -3,7 +3,7 @@ class Parameters:
     def __init__(self):
         # Data related
         self.interval_unit = '1h'
-        self.data_range = 75
+        self.data_range = 200
         self.study_range = self.data_range
 
         # Trade related
