@@ -22,7 +22,7 @@ class Data:
         print("Bot initialized !")
 
     def download_data(self):
-        if self.interval_unit == '5T':
+        if self.interval_unit == '5m':
             start_min = (self.data_range + 1) * 5
             start_str = str(start_min) + ' minutes ago UTC'
 
