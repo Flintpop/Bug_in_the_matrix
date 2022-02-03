@@ -2,10 +2,11 @@
 class Parameters:
     def __init__(self):
         # Data related
-        self.interval_unit = '1h'
+        self.interval_unit = '5m'
         self.data_range = 200
         self.study_range = self.data_range
-
+        self.waiting_time = self.get_waiting_time()
+        self.fast_wait_time = int(self.waiting_time / 2)
         # Trade related
         self.risk_ratio = 1
         self.risk_per_trade_brut = 18
@@ -40,3 +41,25 @@ class Parameters:
         # Miscellaneous
         self.debug_mode = True
         self.download_mode = True
+
+    def get_waiting_time(self):
+        waiting_time = 0
+        if self.interval_unit == '1m':
+            waiting_time = 55
+        elif self.interval_unit == '5m':
+            waiting_time = 270
+        elif self.interval_unit == '15m':
+            waiting_time = 870
+        elif self.interval_unit == '30m':
+            waiting_time = 1_770
+        elif self.interval_unit == '1h':
+            waiting_time = 3_570
+        elif self.interval_unit == '4h':
+            waiting_time = 14_350
+        return waiting_time
+
+    def check_parameters_exception(self):
+        if self.data_range - self.ema_fractals_ema[len(self.ema_fractals_ema) - 1] / 2 < \
+                self.ema_fractals_ema[len(self.ema_fractals_ema) - 1]:
+            print("Error, data_range too small so that ema calculations car occur.")
+            raise ValueError

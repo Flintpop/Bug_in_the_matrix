@@ -22,19 +22,31 @@ class Data:
         print("Bot initialized !")
 
     def download_data(self):
-        if self.interval_unit == '5m':
+        start_str = ""
+        if self.interval_unit == '1m':
+            start_min = (self.data_range + 1) * 1
+            start_str = str(start_min) + ' minutes ago UTC'
+        elif self.interval_unit == '5m':
             start_min = (self.data_range + 1) * 5
             start_str = str(start_min) + ' minutes ago UTC'
-
-            data = self.data_download(start_str)
+        elif self.interval_unit == '15m':
+            start_min = (self.data_range + 1) * 15
+            start_str = str(start_min) + ' minutes ago UTC'
+        elif self.interval_unit == '30':
+            start_min = (self.data_range + 1) * 30
+            start_str = str(start_min) + ' minutes ago UTC'
         elif self.interval_unit == '1h':
             start_min = (self.data_range + 1)
             start_str = str(start_min) + ' hours ago UTC'
-
-            data = self.data_download(start_str)
+        elif self.interval_unit == '4h':
+            start_min = (self.data_range + 1) * 4
+            start_str = str(start_min) + ' hours ago UTC'
         else:
-            print("ERROR : Value of interval unit not specified in download_data in Data object function.")
+            print("ERROR : Value of interval unit not specified in download_data in Data object function."
+                  f"The value in question : {self.interval_unit}")
             raise ValueError
+
+        data = self.data_download(start_str)
 
         return data
 

@@ -26,9 +26,9 @@ class Indicators(Data):
 
     def macd(self, period_long=26, period_short=12, period_signal=9, column='close'):
         # Calc short term EMA
-        short_ema = Indicators.ema(self, period_short, column=column)
+        short_ema = self.ema(period_short, column=column)
         # Calc long term EMA
-        long_ema = Indicators.ema(self, period_long, column=column)
+        long_ema = self.ema(period_long, column=column)
         # Calc the MA Convergence divergence (MACD)
         macd = short_ema - long_ema
         self.data['MACD'] = macd

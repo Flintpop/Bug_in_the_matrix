@@ -43,8 +43,8 @@ class EmaFractalsInit:
 
         self.warn = Warn()
 
-        self.wait = 3500
-        self.fast_wait = 1700
+        self.wait = settings.waiting_time
+        self.fast_wait = settings.fast_wait_time
 
     def scan(self):
         log = self.warn.logs.add_log
@@ -100,15 +100,13 @@ class EmaFractalsInit:
                             self.data.loc[index - 2, 'ema100']
             condition_two = self.data.loc[index, 'close'] > \
                             self.data.loc[index, 'ema100']
-            rsi_good_pos = self.settings.long_rsi_max > self.data.loc[index - 2, 'rsi'] > self.settings.long_rsi_min
         else:
             condition_one = self.data.loc[index - 2, 'close'] < \
                             self.data.loc[index - 2, 'ema100']
             condition_two = self.data.loc[index, 'close'] < \
                             self.data.loc[index, 'ema100']
-            rsi_good_pos = self.settings.short_rsi_min < self.data.loc[index - 2, 'rsi']
 
-        return condition_one and condition_two and rsi_good_pos
+        return condition_one and condition_two
 
     def init_trade(self):
         self.warn.debug_file()

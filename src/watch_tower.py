@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from time import sleep
 import datetime
+from src.Miscellaneous.settings import Parameters
 
 
 def send_email(word, subject="Update in your project"):
@@ -43,8 +44,9 @@ def send_email(word, subject="Update in your project"):
 
 class Watch:
     def __init__(self):
-        self.wait = 10000
-        print("WatchTowerLaunched !")
+        settings = Parameters()
+        self.wait = int(settings.waiting_time * 1.3)
+        print(f"WatchTowerLaunched ! It will check every {self.wait} seconds")
         self.file = open("Output/debug_file.txt", "r")
         self.watch_tower()
 
