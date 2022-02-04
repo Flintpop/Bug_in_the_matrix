@@ -7,8 +7,6 @@ class HighLowHistory(Indicators):
     def __init__(self, client, symbol, symbol_index):
         super().__init__(client, symbol, symbol_index)
 
-        self.long = None
-
         self.bull_indexes, self.bear_indexes, self.fake_bull_indexes, self.fake_bear_indexes = \
             self.macd_trend_data()
 

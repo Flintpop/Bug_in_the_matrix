@@ -6,6 +6,7 @@ from src.Data.data import Data
 class Indicators(Data):
     def __init__(self, client, symbol, symbol_index):
         super().__init__(client, symbol, symbol_index)
+        self.long = None
 
         self.ema_trend = self.ema(600)
         self.ema_fast = self.ema(150)

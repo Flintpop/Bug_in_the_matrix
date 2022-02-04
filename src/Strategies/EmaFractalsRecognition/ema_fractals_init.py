@@ -115,7 +115,7 @@ class EmaFractalsInit:
         binance = BinanceOrders(
             coin=self,
             client=self.client,
-            log=self.log_master,
+            log=log,
             lowest_quantity=self.settings.lowest_quantity[0]
         )
         self.debug.actualize_data(self)
