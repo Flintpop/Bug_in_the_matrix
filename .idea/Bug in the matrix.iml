@@ -3,8 +3,11 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/Main" isTestSource="false" />
-      <sourceFolder url="file://$PycharmProjects$/MoneyGlitch/src/Data" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/Miscellaneous" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/Data" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/Strategies" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/Trade" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/src/Output" />
     </content>

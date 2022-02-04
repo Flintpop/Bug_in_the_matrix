@@ -9,7 +9,7 @@ class Parameters:
         self.fast_wait_time = int(self.waiting_time / 2)
 
         # Trade related
-        self.limit_order_mode = True
+        self.limit_order_mode = False
         self.price_entry_coefficient = 12  # price reduction in the range between sl and raw entry price in %
         self.limit_wait_price_order = 4  # number of candles the bot waits before giving up on the trade
         self.risk_ratio = 1

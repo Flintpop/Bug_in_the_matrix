@@ -9,7 +9,7 @@ class Warn:
         self.logs = LogMaster()
 
     @staticmethod
-    def send_result_email(symbol:str, long:bool, win:bool, entry_price, close_price, time_pos_hit, time_pos_open,
+    def send_result_email(symbol: str, long: bool, win: bool, entry_price, close_price, time_pos_hit, time_pos_open,
                           last_money, current_money):
         won = Warn.win_loss_string(win)
         word = Warn.trade_type_string(long)
@@ -23,7 +23,7 @@ class Warn:
                       f"<p>There is now <b>{current_money}$</b> in your account instead of <b>{last_money}$</b>.</p>"\
                       f"<p>The trade resulted in a <b>{gain_percentage} %</b> {gain_or_loss}."
 
-        send_email(word = send_string, subject = f"Trade {won} !")
+        send_email(word=send_string, subject=f"Trade {won} !")
 
     @staticmethod
     def trade_type_string(long):

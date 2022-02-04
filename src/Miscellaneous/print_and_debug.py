@@ -6,7 +6,6 @@ from src.Miscellaneous.settings import Parameters
 
 # the data has to be this way :
 # datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00',104.96, 119.6544]]
-from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 
 
 def os_path_fix():
@@ -94,8 +93,10 @@ class PrintUser:
         self.study_range = coin_obj.study_range
         self.settings = Parameters()
 
-        self.logs = LogMaster()  # TODO: Potential bug here.
+        self.logs = LogMaster()
         self.print_log = self.logs.add_log
+        
+        self.logs.add_log(f"\n\nBot initialized at {dt.datetime.now()} !")
 
     def actualize_data(self, coin):
         self.data = coin.data
@@ -150,7 +151,7 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, trade: BinanceOrders, long, symbol):
+    def debug_trade_parameters(self, trade, long, symbol):
         log = self.logs.add_log
         date = PrintUser.get_time(self, trade.entry_price_index)
 
