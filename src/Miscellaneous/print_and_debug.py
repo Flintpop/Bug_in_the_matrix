@@ -149,11 +149,11 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, trade, symbol):
+    def debug_trade_parameters(self, trade, long, symbol):
         log = self.logs.add_log
         date = PrintUser.get_time(self, trade.entry_price_index)
 
-        log(f"\n\n\nIt is a {self.trade_type_string(trade.long)} for the {symbol} market")
+        log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol} market")
         log(f"\nThe entry price is : {trade.entry_price} at : {date}")
         log(f"\nThe stop loss is : {trade.sl}")
         log(f"\nThe take profit is : {trade.tp}")

@@ -126,6 +126,7 @@ class EmaFractalsInit:
         if binance.leverage > 0 and binance.quantity > 0.0:
             self.debug.debug_trade_parameters(
                 trade=binance,
+                long=self.long,
                 symbol="BTCUSDT"
             )
             try:
@@ -174,6 +175,7 @@ class EmaFractalsInit:
                               i.loc[index, 'ema100'] or (i.loc[index, 'ema20']) <
                               i.loc[index, 'ema50'] < i.loc[index, 'ema100'])
         self.long = i.loc[index, 'ema20'] > i.loc[index, 'ema50']
+        self.indicators.long = self.long
 
     def check_price_not_touching(self):
         i = self.indicators.data
