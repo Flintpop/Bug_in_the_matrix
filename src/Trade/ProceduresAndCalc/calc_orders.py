@@ -189,7 +189,7 @@ class CalcOrders:
                 else:
                     leverage = self.leverage_calculation(percentage_risked_trade)
 
-                self.log(f"The leverage before round is : {leverage} and after : {leverage.__round__()}")
+                self.log(f"\nThe leverage before round is : {leverage} and after : {leverage.__round__()}")
                 leverage = leverage.__round__()
                 if money_traded > self.settings.lowest_money_binance and leverage >= 1:
                     quantity = (money_traded / self.entry_price) * leverage

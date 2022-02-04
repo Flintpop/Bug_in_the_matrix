@@ -19,8 +19,6 @@ class Data:
 
         self.data = self.download_data()
 
-        print("Bot initialized !")
-
     def download_data(self):
         if self.interval_unit == '1m':
             start_min = (self.data_range + 1) * 1

@@ -169,7 +169,7 @@ class EmaFractalsInit:
         while binance.trade_in_going:
             infos = self.client.futures_account()
             current_money = float(infos["totalMarginBalance"])
-            target_hit = trade_results.check_result(binance, self.log_master, symbol="BTCUSDT",
+            target_hit = trade_results.check_result(binance, self.log_master, symbol=0,
                                                     time_pos_open=date_pos_open,
                                                     current_money=current_money,
                                                     last_money=last_money)

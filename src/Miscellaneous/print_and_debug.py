@@ -93,8 +93,10 @@ class PrintUser:
         self.study_range = coin_obj.study_range
         self.settings = Parameters()
 
-        self.logs = LogMaster()  # TODO: Potential bug here.
+        self.logs = LogMaster()
         self.print_log = self.logs.add_log
+        
+        self.logs.add_log(f"\n\nBot initialized at {dt.datetime.now()} !")
 
     def actualize_data(self, coin):
         self.data = coin.data
