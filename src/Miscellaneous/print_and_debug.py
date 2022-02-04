@@ -6,7 +6,6 @@ from src.Miscellaneous.settings import Parameters
 
 # the data has to be this way :
 # datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00',104.96, 119.6544]]
-from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 
 
 def os_path_fix():
@@ -150,7 +149,7 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, trade: BinanceOrders, long, symbol):
+    def debug_trade_parameters(self, trade, long, symbol):
         log = self.logs.add_log
         date = PrintUser.get_time(self, trade.entry_price_index)
 

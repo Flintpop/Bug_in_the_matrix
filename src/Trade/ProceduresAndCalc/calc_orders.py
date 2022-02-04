@@ -1,6 +1,5 @@
 from src.Miscellaneous.warn_user import Warn
 from src.Miscellaneous.settings import Parameters
-import datetime
 
 
 class CalcOrders:
@@ -263,7 +262,7 @@ class CalcOrders:
     def correct_leverage(self, leverage, risk_trade):
         while leverage * risk_trade * 1.5 >= 100:  # Not tested. Looks to work
             self.log("\nHigh risk of liquidation ! Reducing leverage...")
-            leverage = leverage - ((leverage * 0.1).__round__())
+            leverage = leverage - (leverage * 0.1).__round__()
         if leverage >= 125:
             self.log("\nLeverage too high. The platform cannot handle it.")
             leverage = 120

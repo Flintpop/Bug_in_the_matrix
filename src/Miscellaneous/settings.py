@@ -2,14 +2,14 @@
 class Parameters:
     def __init__(self):
         # Data related
-        self.interval_unit = '5m'
+        self.interval_unit = '1m'
         self.data_range = 200
         self.study_range = self.data_range
         self.waiting_time = self.get_waiting_time()
         self.fast_wait_time = int(self.waiting_time / 2)
 
         # Trade related
-        self.limit_order_mode = True
+        self.limit_order_mode = False
         self.price_entry_coefficient = 12  # price reduction in the range between sl and raw entry price in %
         self.limit_wait_price_order = 4  # number of candles the bot waits before giving up on the trade
         self.risk_ratio = 1

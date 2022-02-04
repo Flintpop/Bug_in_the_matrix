@@ -163,7 +163,7 @@ class EmaFractalsInit:
         )
         infos = self.client.futures_account()
 
-        last_money = float(infos["totalMarginBalance"]) - float(infos["totalPositionInitialMargin"])
+        last_money = float(infos["totalMarginBalance"])
         date_pos_open = self.debug.get_time(self.study_range - 2)
 
         while binance.trade_in_going:
