@@ -158,7 +158,7 @@ class CalcOrders:
         money_traded = money_available / money_divided
 
         percentage_risked_trade = self.percentage_risk_calculation()
-        self.log("\n\nThe percentage risked on the trade is wo leverage : " + str(percentage_risked_trade))
+        self.log(f"\n\nThe percentage risked on the trade is wo leverage : {percentage_risked_trade.__round__(2)}")
 
         lowest_entry_price_trade = self.lowest_quantity * self.entry_price
         leverage = self.leverage_calculation(percentage_risked_trade)

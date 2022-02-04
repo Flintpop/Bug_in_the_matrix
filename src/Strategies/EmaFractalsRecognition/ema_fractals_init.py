@@ -65,7 +65,6 @@ class EmaFractalsInit:
                         self.check_emas()
                         while not self.william_signal and not self.price_far_from_ema and self.ema_right_pos:
                             self.check_price_not_touching()
-
                             william_long, william_short = self.check_william_signal()
                             if (self.long and william_long) or (not self.long and william_short):
                                 log("\n\nWilliam signal on and price pulled back on ema !")
@@ -74,20 +73,21 @@ class EmaFractalsInit:
                             else:
                                 self.update()
                         self.check_emas()
+
                         if self.last_tests() and self.ema_right_pos and self.long:
                             self.init_trade()
-            except Exception as e:
+            except Exception as error:
                 stopped = True
 
                 from src.watch_tower import send_email
                 import traceback
 
                 self.warn.logs.add_log(f"\n\n\nCRITICAL ERROR : Bot stopped !"
-                                       f"\n\n{e}"
+                                       f"\n\n{error}"
                                        f"\n\nThe traceback is : "
                                        f"\n\n\n{traceback.format_exc()}")
                 word_mail = f"<h3>Bot stopped !</h3>" \
-                            f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
+                            f"<p>Here is the current small error msg : </p><p><b>{error}</b></p>" \
                             f"<p>Here is the traceback : </p>" \
                             f"<p>{traceback.format_exc()}</p>"
                 send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
@@ -117,7 +117,6 @@ class EmaFractalsInit:
             log=log,
             lowest_quantity=self.settings.lowest_quantity[0]
         )
-        self.debug.actualize_data(self)
 
         binance.init_calculations(strategy="ema_fractals")
         log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
@@ -187,6 +186,10 @@ class EmaFractalsInit:
         else:
             order_entry_price = trade.entry_price + \
                                 (trade.stop_loss - trade.entry_price) * (self.settings.price_entry_coefficient / 100)
+
+        self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} $ and the "
+                                f"potential reduced one is {order_entry_price} $")
+
         if order_entry_price > 1000:
             order_entry_price.__round__()
         elif order_entry_price > 10:
@@ -198,9 +201,10 @@ class EmaFractalsInit:
             i += 1
             self.update()
             trade_results.update(self, self.debug)
-            self.debug.actualize_data(self)
+
         if order_filled:
             trade.entry_price = order_entry_price
+
         return order_filled
 
     def check_emas(self):
@@ -254,6 +258,7 @@ class EmaFractalsInit:
                 self.indicators.data = self.indicators.download_data()
                 self.indicators.actualize_data_ema_fractals()
                 self.data = self.indicators.data
+                self.debug.actualize_data(self)
                 updated = True
             except Exception as e:
                 self.warn.logs.add_log(f'\n\nWARNING UPDATE FUNCTION: \n{e}\n')

@@ -2,7 +2,7 @@
 class Parameters:
     def __init__(self):
         # Data related
-        self.interval_unit = '5m'
+        self.interval_unit = '1m'
         self.data_range = 200
         self.study_range = self.data_range
         self.waiting_time = self.get_waiting_time()
