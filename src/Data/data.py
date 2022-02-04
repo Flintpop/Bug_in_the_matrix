@@ -22,7 +22,6 @@ class Data:
         print("Bot initialized !")
 
     def download_data(self):
-        start_str = ""
         if self.interval_unit == '1m':
             start_min = (self.data_range + 1) * 1
             start_str = str(start_min) + ' minutes ago UTC'

@@ -71,6 +71,20 @@ class TradeResults:
 
         return win, target_hit
 
+    def check_limit_order(self, target):
+        low_wicks = self.coin.data['low'].tail(1).values
+        high_wicks = self.coin.data['high'].tail(1).values
+        target_hit = False
+
+        if self.coin.long:
+            if float(low_wicks[0]) <= target:  # Below target
+                target_hit = True
+        else:
+            if float(high_wicks[0]) >= target:  # Above target
+                target_hit = True
+
+        return target_hit
+
     def update(self, coin, debug):
         self.coin = coin
         self.debug = debug

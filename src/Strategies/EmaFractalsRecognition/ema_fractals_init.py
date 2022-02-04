@@ -7,6 +7,7 @@ from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 from src.Trade.check_results import TradeResults
 from src.Miscellaneous.warn_user import Warn
 
+
 # OLD to do : - Clean all errors ✔️
 #  - Make the necessary objects compatible with this strategy (check target function for exemple) ✔️
 #  - Check for the last candle to be ignored ✔️
@@ -98,13 +99,11 @@ class EmaFractalsInit:
         if self.long:
             condition_one = self.data.loc[index - 2, 'close'] > \
                             self.data.loc[index - 2, 'ema100']
-            condition_two = self.data.loc[index, 'close'] > \
-                            self.data.loc[index, 'ema100']
+            condition_two = self.data.loc[index, 'close'] > self.data.loc[index, 'ema100']
         else:
             condition_one = self.data.loc[index - 2, 'close'] < \
                             self.data.loc[index - 2, 'ema100']
-            condition_two = self.data.loc[index, 'close'] < \
-                            self.data.loc[index, 'ema100']
+            condition_two = self.data.loc[index, 'close'] < self.data.loc[index, 'ema100']
 
         return condition_one and condition_two
 
@@ -124,32 +123,20 @@ class EmaFractalsInit:
         log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
 
         if binance.leverage > 0 and binance.quantity > 0.0:
-            self.debug.debug_trade_parameters(
-                trade=binance,
-                long=self.long,
-                symbol="BTCUSDT"
-            )
             try:
-                # binance.open_trade(symbol="BTCUSDT")
-                # binance.place_sl_and_tp(symbol="BTCUSDT")
-                log("\nOrders placed and position open !")
-                infos = self.client.futures_account()
-
-                last_money = float(infos["totalMarginBalance"]) - float(infos["totalPositionInitialMargin"])
                 trade_results = TradeResults(self, self.debug)
-                date_pos_open = self.debug.get_time(self.study_range - 2)
-
-                while binance.trade_in_going:
-                    infos = self.client.futures_account()
-                    current_money = float(infos["totalMarginBalance"])
-                    target_hit = trade_results.check_result(binance, self.log_master, symbol="BTCUSDT",
-                                                            time_pos_open=date_pos_open, current_money=current_money,
-                                                            last_money=last_money)
-                    if target_hit:
-                        binance.trade_in_going = False
+                if self.settings.limit_order_mode:
+                    if self.get_lower_price(binance, trade_results):
+                        binance.init_calculations(strategy="ema_fractals")
+                        # binance.place_sl_and_tp(symbol="BTCUSDT")
+                        self.launch_procedures(binance, log, trade_results)
                     else:
-                        self.update()
-                        trade_results.update(self, self.debug)
+                        log(f"\n\nTrade cancelled, order price not filled")
+                        binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
+                else:
+                    # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
+                    # binance.place_sl_and_tp(symbol="BTCUSDT")
+                    self.launch_procedures(binance, log, trade_results)
             except Exception as e:
                 from src.watch_tower import send_email
                 import traceback
@@ -166,6 +153,55 @@ class EmaFractalsInit:
                 send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
         else:
             log("\nTrade aborted because of leverage of quantity set to 0 !")
+
+    def launch_procedures(self, binance: BinanceOrders, log, trade_results: TradeResults):
+        log("\nOrders placed and position open !")
+        self.debug.debug_trade_parameters(
+            trade=binance,
+            long=self.long,
+            symbol="BTCUSDT"
+        )
+        infos = self.client.futures_account()
+
+        last_money = float(infos["totalMarginBalance"]) - float(infos["totalPositionInitialMargin"])
+        date_pos_open = self.debug.get_time(self.study_range - 2)
+
+        while binance.trade_in_going:
+            infos = self.client.futures_account()
+            current_money = float(infos["totalMarginBalance"])
+            target_hit = trade_results.check_result(binance, self.log_master, symbol="BTCUSDT",
+                                                    time_pos_open=date_pos_open,
+                                                    current_money=current_money,
+                                                    last_money=last_money)
+            if target_hit:
+                binance.trade_in_going = False
+            else:
+                self.update()
+                trade_results.update(self, self.debug)
+
+    def get_lower_price(self, trade: BinanceOrders, trade_results: TradeResults):
+        order_filled = False
+        if self.long:
+            order_entry_price = trade.entry_price - \
+                                (trade.entry_price - trade.stop_loss) * (self.settings.price_entry_coefficient / 100)
+        else:
+            order_entry_price = trade.entry_price + \
+                                (trade.stop_loss - trade.entry_price) * (self.settings.price_entry_coefficient / 100)
+        if order_entry_price > 1000:
+            order_entry_price.__round__()
+        elif order_entry_price > 10:
+            order_entry_price.__round__(2)
+
+        i = 0
+        while i < self.settings.limit_wait_price_order and not order_filled:
+            order_filled = trade_results.check_limit_order(order_entry_price)
+            i += 1
+            self.update()
+            trade_results.update(self, self.debug)
+            self.debug.actualize_data(self)
+        if order_filled:
+            trade.entry_price = order_entry_price
+        return order_filled
 
     def check_emas(self):
         i = self.data

@@ -7,7 +7,11 @@ class Parameters:
         self.study_range = self.data_range
         self.waiting_time = self.get_waiting_time()
         self.fast_wait_time = int(self.waiting_time / 2)
+
         # Trade related
+        self.limit_order_mode = True
+        self.price_entry_coefficient = 12  # price reduction in the range between sl and raw entry price in %
+        self.limit_wait_price_order = 4  # number of candles the bot waits before giving up on the trade
         self.risk_ratio = 1
         self.risk_per_trade_brut = 18
         self.buffer = 0.0045
@@ -31,7 +35,10 @@ class Parameters:
         self.market_symbol_list = ['BTCUSDT']
         self.lowest_quantity = (0.001, 0.001, 0.01, 1.0)
         self.maximum_leverage = (125, 100, 75, 75)
-        self.fees = 0.000_4
+        if self.limit_order_mode:
+            self.fees = 0.000_2
+        else:
+            self.fees = 0.000_4
         self.lowest_money_binance = 10.0
 
         # Detection related

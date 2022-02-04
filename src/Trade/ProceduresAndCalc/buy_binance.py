@@ -29,9 +29,9 @@ class BinanceOrders(CalcOrders):
             position_side = "SHORT"
 
         BinanceOrders.place_order_limit(self,
-                                         position_side=position_side,
-                                         side=side,
-                                         symbol=symbol,
+                                        position_side=position_side,
+                                        side=side,
+                                        symbol=symbol,
                                         price=entry_price)
 
     def close_pos(self, symbol_string):
@@ -102,13 +102,13 @@ class BinanceOrders(CalcOrders):
 
 if __name__ == '__main__':
     from src.Main.main import Program
+
     connect = Program.connect_to_api()
 
     connect.futures_create_order(symbol="ETHUSDT",
-                                     type="LIMIT",
-                                     quantity=0.009,
-                                     price=2000,
-                                     side="BUY",
-                                     timeInForce="GTC",
-                                     positionSide="LONG")
-
+                                 type="LIMIT",
+                                 quantity=0.009,
+                                 price=2000,
+                                 side="BUY",
+                                 timeInForce="GTC",
+                                 positionSide="LONG")

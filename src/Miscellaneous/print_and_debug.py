@@ -6,6 +6,7 @@ from src.Miscellaneous.settings import Parameters
 
 # the data has to be this way :
 # datas = [['BTCUSDT', 'long/short', 1, '2021-06-16 00:20:00', '2021-06-16 10:45:00',104.96, 119.6544]]
+from src.Trade.ProceduresAndCalc.buy_binance import BinanceOrders
 
 
 def os_path_fix():
@@ -149,14 +150,14 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, trade, long, symbol):
+    def debug_trade_parameters(self, trade: BinanceOrders, long, symbol):
         log = self.logs.add_log
         date = PrintUser.get_time(self, trade.entry_price_index)
 
         log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol} market")
         log(f"\nThe entry price is : {trade.entry_price} at : {date}")
-        log(f"\nThe stop loss is : {trade.sl}")
-        log(f"\nThe take profit is : {trade.tp}")
+        log(f"\nThe stop loss is : {trade.stop_loss}")
+        log(f"\nThe take profit is : {trade.take_profit}")
 
     def get_current_trade_symbol(self, symbol_index):
         return self.settings.market_symbol_list[symbol_index]
