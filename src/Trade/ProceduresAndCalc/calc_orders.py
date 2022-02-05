@@ -3,7 +3,7 @@ from src.Miscellaneous.settings import Parameters
 
 
 class CalcOrders:
-    def __init__(self, coin, client, log, lowest_quantity):
+    def __init__(self, coin, client, log, lowest_quantity, print_infos):
         self.settings = Parameters()
         self.warn = Warn()
 
@@ -26,15 +26,16 @@ class CalcOrders:
         self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
 
         self.stop_loss = 0
-        self.entry_price, self.entry_price_index = 0, 0
+        self.entry_price, self.entry_price_date = 0, 0
         self.take_profit = 0
 
         self.quantity, self.leverage = 0, 0
         self.risk_ratio_adjusted = self.settings.risk_ratio
+        self.print_infos = print_infos
 
     def init_calculations(self, strategy="divergence"):
         if not self.trade_in_going:
-            self.entry_price, self.entry_price_index = self.entry_price_calc()
+            self.entry_price, self.entry_price_date = self.entry_price_calc()
             if strategy == "divergence":
                 self.stop_loss = self.stop_loss_calc()
             elif strategy == "ema_fractals":
@@ -51,11 +52,10 @@ class CalcOrders:
         self.quantity, self.leverage = self.lev_quant_calc(self.balance_available)
 
     def entry_price_calc(self):
-        prices = self.coin.data['close'].tail(2).values
-        enter_price_index = len(prices) - 2
-        entry_price = prices[enter_price_index]
+        entry_price = self.coin.data.loc[self.coin.study_range - 2, 'close']
+        entry_price_date = self.coin.data.loc[self.coin.study_range - 2, 'open_date_time']
 
-        return entry_price, enter_price_index
+        return entry_price, entry_price_date
 
     def take_profit_calc(self, enter_price, stop_loss):
         if self.coin.long:
@@ -166,7 +166,6 @@ class CalcOrders:
         money_traded = money_available / money_divided
 
         percentage_risked_trade = self.percentage_risk_calculation()
-        self.log(f"\n\nThe percentage risked on the trade is wo leverage : {percentage_risked_trade.__round__(2)}")
 
         lowest_entry_price_trade = self.lowest_quantity * self.entry_price
         leverage = self.leverage_calculation(percentage_risked_trade)
@@ -198,7 +197,6 @@ class CalcOrders:
                 else:
                     leverage = self.leverage_calculation(percentage_risked_trade)
 
-                self.log(f"\nThe leverage before round is : {leverage} and after : {leverage.__round__()}")
                 leverage = leverage.__round__()
                 if money_traded > self.settings.lowest_money_binance and leverage >= 1:
                     quantity = (money_traded / self.entry_price) * leverage
@@ -227,14 +225,9 @@ class CalcOrders:
                     elif quantity <= self.lowest_quantity:
                         quantity = 0
 
-                    quotient_div_money = self.balance_available / (quantity / leverage * self.entry_price)
-
-                    self.log("\nThe leverage is : " + str(leverage))
-                    self.log("\nMaximum loss of current trade : " +
-                             str(float(leverage * percentage_risked_trade / quotient_div_money).__round__(2)) + " %")
-                    self.log("\nThe quantity is : " + str(quantity))
-
                     quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
+                    if self.print_infos:
+                        self.print_infos_quantity_leverage(percentage_risked_trade, leverage, quantity)
                 else:
                     if money_traded < self.settings.lowest_money_binance:
                         self.log(f"\n\nWARNING MONEY ENTRY : TOO LOW ({money_traded.__round__(2)})")
@@ -244,6 +237,14 @@ class CalcOrders:
                     leverage = 0
 
         return quantity, leverage
+
+    def print_infos_quantity_leverage(self, raw_risk, leverage, quantity):
+        self.log(f"\n\nThe percentage risked on the trade is wo leverage : {raw_risk.__round__(2)} %")
+        self.log(f"\nThe leverage is : {leverage}")
+        quotient_div_money = self.balance_available / (quantity / leverage * self.entry_price)
+        self.log("\nMaximum loss of current trade : " +
+                 str(float(leverage * raw_risk / quotient_div_money).__round__(2)) + " %")
+        self.log("\nThe quantity is : " + str(quantity))
 
     # Last check of possible incorrect leverage or quantity. Avoid incorrect input in binance APIs.
     def last_leverage_quantity_check(self, leverage, quantity):

@@ -11,6 +11,10 @@ class Indicators(Data):
         self.ema_trend = self.ema(600)
         self.ema_fast = self.ema(150)
 
+        self.data['ema20'] = self.ema(period=self.settings.ema_fractals_ema[0])
+        self.data['ema50'] = self.ema(period=self.settings.ema_fractals_ema[1])
+        self.data['ema100'] = self.ema(period=self.settings.ema_fractals_ema[2])
+
         self.macd()
 
     def actualize_data_ema_fractals(self):

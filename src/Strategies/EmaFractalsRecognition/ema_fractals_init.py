@@ -52,7 +52,6 @@ class EmaFractalsInit:
         stopped = False
         while not stopped:
             try:
-                self.update()
                 self.check_emas()
                 self.william_signal = False
                 if self.ema_right_pos and self.long:
@@ -76,6 +75,7 @@ class EmaFractalsInit:
 
                         if self.last_tests() and self.ema_right_pos and self.long:
                             self.init_trade()
+                self.update()
             except Exception as error:
                 stopped = True
 
@@ -115,7 +115,8 @@ class EmaFractalsInit:
             coin=self,
             client=self.client,
             log=log,
-            lowest_quantity=self.settings.lowest_quantity[0]
+            lowest_quantity=self.settings.lowest_quantity[0],
+            print_infos=False
         )
 
         binance.init_calculations(strategy="ema_fractals")
@@ -126,6 +127,7 @@ class EmaFractalsInit:
         if binance.leverage > 0 and binance.quantity > 0.0:
             try:
                 trade_results = TradeResults(self, self.debug)
+                binance.print_infos = True
                 if self.settings.limit_order_mode:
                     if self.get_lower_price(binance, trade_results):
                         binance.init_calculations(strategy="ema_fractals")
@@ -169,15 +171,16 @@ class EmaFractalsInit:
         infos = self.client.futures_account()
 
         last_money = float(infos["totalMarginBalance"])
-        date_pos_open = self.debug.get_time(self.study_range - 2)
 
         while binance.trade_in_going:
             infos = self.client.futures_account()
             current_money = float(infos["totalMarginBalance"])
-            target_hit = trade_results.check_result(binance, self.log_master, symbol_index=0,
-                                                    time_pos_open=date_pos_open,
+            target_hit = trade_results.check_result(binance,
+                                                    self.log_master,
+                                                    symbol_index=0,
                                                     current_money=current_money,
-                                                    last_money=last_money)
+                                                    last_money=last_money
+                                                    )
             if target_hit:
                 binance.trade_in_going = False
             else:
@@ -205,11 +208,12 @@ class EmaFractalsInit:
         while i < self.settings.limit_wait_price_order and not order_filled:
             order_filled = trade_results.check_limit_order(order_entry_price)
             i += 1
-            self.update()
-            self.debug.actualize_data(self)
-            trade_results.update(self, self.debug)
+            if not order_filled:
+                self.update()
+                trade_results.update(self, self.debug)
         if order_filled:
             trade.entry_price = order_entry_price
+            trade.entry_price_date = self.data.loc[self.last_closed_candle_index]
 
         return order_filled
 

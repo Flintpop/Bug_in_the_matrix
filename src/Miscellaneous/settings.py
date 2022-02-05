@@ -52,17 +52,17 @@ class Parameters:
     def get_waiting_time(self):
         waiting_time = 0
         if self.interval_unit == '1m':
-            waiting_time = 55
+            waiting_time = 35
         elif self.interval_unit == '5m':
-            waiting_time = 270
+            waiting_time = 220
         elif self.interval_unit == '15m':
-            waiting_time = 870
+            waiting_time = 600
         elif self.interval_unit == '30m':
-            waiting_time = 1_770
+            waiting_time = 1_500
         elif self.interval_unit == '1h':
-            waiting_time = 3_570
+            waiting_time = 2_500
         elif self.interval_unit == '4h':
-            waiting_time = 14_350
+            waiting_time = 11_000
         return waiting_time
 
     def check_parameters_exception(self):

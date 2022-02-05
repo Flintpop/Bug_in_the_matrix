@@ -3,8 +3,8 @@ import time
 
 
 class BinanceOrders(CalcOrders):
-    def __init__(self, coin, client, log, lowest_quantity):
-        super().__init__(coin, client, log, lowest_quantity)
+    def __init__(self, coin, client, log, lowest_quantity, print_infos):
+        super().__init__(coin, client, log, lowest_quantity, print_infos)
 
     def open_trade_market(self, symbol):
         if self.coin.long:
