@@ -101,5 +101,6 @@ class GetData:
             f.write(str(decrypted))
         f.close()
 
+
 if __name__ == '__main__':
     Encrypt()

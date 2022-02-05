@@ -130,7 +130,8 @@ class Divergence:
             coin=self.coins[index_symbol],
             client=self.client,
             log=self.warn.logs.add_log,
-            lowest_quantity=self.lowest_quantities[index_symbol]
+            lowest_quantity=self.lowest_quantities[index_symbol],
+            print_infos=True
         )
 
         binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
@@ -163,8 +164,7 @@ class Divergence:
                     infos = self.client.futures_account()
                     current_money = float(infos["totalMarginBalance"])
                     target_hit = trade_results.check_result(binance, self.log_master, symbol_index=index_symbol,
-                                                            time_pos_open=date_pos_open, current_money=current_money,
-                                                            last_money=last_money)
+                                                            current_money=current_money, last_money=last_money)
                     if target_hit:
                         binance.trade_in_going = False
                         time.sleep(self.settings.wait_after_trade_seconds)

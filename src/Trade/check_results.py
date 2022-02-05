@@ -26,7 +26,7 @@ class TradeResults:
                 entry_price=binance.entry_price,
                 close_price=close_price,
                 time_pos_hit=time_pos_hit,
-                time_pos_open=time_pos_open,
+                time_pos_open=binance.entry_price_date,
                 win=win,
                 symbol_string=symbol_string,
                 last_money=last_money,
@@ -34,8 +34,8 @@ class TradeResults:
             )
             trade_type_string = warn.trade_type_string(self.coin.long)
 
-            CalcOrders.add_to_trade_history(binance, symbol_string, trade_type_string, win, time_pos_open, time_pos_hit,
-                                            binance.current_balance, log_master)
+            CalcOrders.add_to_trade_history(binance, symbol_string, trade_type_string, win, binance.entry_price_date,
+                                            time_pos_hit, binance.current_balance, log_master)
             return True
         return False
 

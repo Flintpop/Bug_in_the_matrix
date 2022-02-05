@@ -9,8 +9,8 @@ class Warn:
         self.logs = LogMaster()
 
     @staticmethod
-    def send_result_email(symbol_string: str, long: bool, win: bool, entry_price, close_price, time_pos_hit, time_pos_open,
-                          last_money, current_money):
+    def send_result_email(symbol_string: str, long: bool, win: bool, entry_price, close_price, time_pos_hit,
+                          time_pos_open, last_money, current_money):
         won = Warn.win_loss_string(win)
         word = Warn.trade_type_string(long)
         gain_percentage = (float(current_money) / float(last_money) - 1) * 100
