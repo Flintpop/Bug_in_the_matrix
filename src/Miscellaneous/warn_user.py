@@ -9,14 +9,14 @@ class Warn:
         self.logs = LogMaster()
 
     @staticmethod
-    def send_result_email(symbol: str, long: bool, win: bool, entry_price, close_price, time_pos_hit, time_pos_open,
+    def send_result_email(symbol_string: str, long: bool, win: bool, entry_price, close_price, time_pos_hit, time_pos_open,
                           last_money, current_money):
         won = Warn.win_loss_string(win)
         word = Warn.trade_type_string(long)
         gain_percentage = (float(current_money) / float(last_money) - 1) * 100
         gain_or_loss = "gain" if win else "loss"
 
-        send_string = f"<h3>Trade completed on {symbol} !</h3>" \
+        send_string = f"<h3>Trade completed on {symbol_string} !</h3>" \
                       f"<h4>The trade was a {word}, and it is {won}.</h4>"  \
                       f"<p>The entry price is <b>{entry_price}</b> at : {time_pos_open}.</p>"\
                       f"<p>The close price is <b>{close_price}</b> at : {time_pos_hit}.</p>"\

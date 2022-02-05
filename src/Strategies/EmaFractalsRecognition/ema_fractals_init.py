@@ -145,11 +145,11 @@ class EmaFractalsInit:
                 binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
                 binance.close_pos(symbol_string="BTCUSDT")
                 log("\n\n\nPositions closed.")
-                word_mail = f"<h3>Bot stopped !</h3>" \
+                word_mail = f"<h3>Trade cancelled !</h3>" \
                             f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
                             f"<p>Here is the traceback : </p>" \
                             f"<p>{traceback.format_exc()}</p>"
-                send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
+                send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
         else:
             log("\nTrade aborted because of leverage of quantity set to 0 !")
 
@@ -158,7 +158,7 @@ class EmaFractalsInit:
         self.debug.debug_trade_parameters(
             trade=binance,
             long=self.long,
-            symbol="BTCUSDT"
+            symbol_string="BTCUSDT"
         )
         infos = self.client.futures_account()
 
@@ -168,7 +168,7 @@ class EmaFractalsInit:
         while binance.trade_in_going:
             infos = self.client.futures_account()
             current_money = float(infos["totalMarginBalance"])
-            target_hit = trade_results.check_result(binance, self.log_master, symbol=0,
+            target_hit = trade_results.check_result(binance, self.log_master, symbol_index=0,
                                                     time_pos_open=date_pos_open,
                                                     current_money=current_money,
                                                     last_money=last_money)
@@ -200,8 +200,8 @@ class EmaFractalsInit:
             order_filled = trade_results.check_limit_order(order_entry_price)
             i += 1
             self.update()
+            self.debug.actualize_data(self)
             trade_results.update(self, self.debug)
-
         if order_filled:
             trade.entry_price = order_entry_price
 

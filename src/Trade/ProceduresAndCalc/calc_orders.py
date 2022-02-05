@@ -199,7 +199,7 @@ class CalcOrders:
                     div = 1
                     entered = False
 
-                    # Determine where to round the quantity. entered is for when lowest_quantity = 1
+                    # Determine where to round the quantity. entered is when lowest_quantity = 1
                     while temp % div != 0:
                         div = div / 10
                         count += 1
