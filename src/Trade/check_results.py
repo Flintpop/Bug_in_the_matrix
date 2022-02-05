@@ -43,15 +43,15 @@ class TradeResults:
         # See if the position is closed, and if it is lost or won.
 
         # Get the data
-        low_wicks = self.coin.data['low'].tail(3).values
-        high_wicks = self.coin.data['high'].tail(3).values
-        last_open_time = self.coin.data['open_date_time'].tail(2).values
+        low_wicks = self.coin.data['low'].tail(1).values
+        high_wicks = self.coin.data['high'].tail(1).values
+        last_open_time = self.coin.data['open_date_time'].tail(1).values
 
         target_hit = False
         win = False
 
-        len_low = len(low_wicks) - 2
-        len_high = len(high_wicks) - 2
+        len_low = 0
+        len_high = 0
 
         if not last_open_time[0] == time_pos_open:  # Check if not in the first unclosed candle.
             if self.coin.long:

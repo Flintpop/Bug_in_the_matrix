@@ -30,6 +30,7 @@ class CalcOrders:
         self.take_profit = 0
 
         self.quantity, self.leverage = 0, 0
+        self.risk_ratio_adjusted = self.settings.risk_ratio
 
     def init_calculations(self, strategy="divergence"):
         if not self.trade_in_going:
@@ -40,8 +41,9 @@ class CalcOrders:
                 self.stop_loss = self.stop_loss_calc_ema_fractals()
             self.take_profit = self.take_profit_calc(self.entry_price, self.stop_loss)
 
-            self.trade_in_going = True
-            self.get_quantity_leverage()
+    def last_calculations(self):
+        self.trade_in_going = True
+        self.get_quantity_leverage()
 
     def get_quantity_leverage(self):
         self.current_balance = float(self.infos["totalMarginBalance"])
@@ -63,6 +65,13 @@ class CalcOrders:
         take_profit.__round__()
 
         return int(take_profit)
+
+    def calc_real_risk_ratio(self):  # Maybe do an abs function
+        if self.coin.long:
+            self.risk_ratio_adjusted = (self.take_profit - self.entry_price) / (self.entry_price - self.stop_loss)
+        else:
+            self.risk_ratio_adjusted = (self.entry_price - self.take_profit) / (self.stop_loss - self.entry_price)
+        self.risk_ratio_adjusted = self.risk_ratio_adjusted.__round__(2)
 
     def stop_loss_calc(self):
         low_l = len(self.coin.low_wicks) - 1
@@ -141,7 +150,7 @@ class CalcOrders:
         end_money = money
         if win:
             end_money = end_money - (end_money * self.fees * self.leverage)
-            end_money = end_money * (1 + (1 - self.settings.risk_per_trade) * self.settings.risk_ratio)
+            end_money = end_money * (1 + (1 - self.settings.risk_per_trade) * self.risk_ratio_adjusted)
             end_money = end_money - (end_money * self.fees * self.leverage)
             win = 1
         else:

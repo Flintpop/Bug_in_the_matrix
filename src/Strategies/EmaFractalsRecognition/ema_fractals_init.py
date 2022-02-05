@@ -119,6 +119,8 @@ class EmaFractalsInit:
         )
 
         binance.init_calculations(strategy="ema_fractals")
+        binance.last_calculations()
+        last_take_profit = binance.take_profit
         log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
 
         if binance.leverage > 0 and binance.quantity > 0.0:
@@ -127,12 +129,16 @@ class EmaFractalsInit:
                 if self.settings.limit_order_mode:
                     if self.get_lower_price(binance, trade_results):
                         binance.init_calculations(strategy="ema_fractals")
+                        binance.take_profit = last_take_profit
+                        binance.last_calculations()
+
                         # binance.place_sl_and_tp(symbol="BTCUSDT")
                         self.launch_procedures(binance, log, trade_results)
                     else:
                         log(f"\n\nTrade cancelled, order price not filled")
                         binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
                 else:
+                    binance.last_calculations()
                     # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
                     # binance.place_sl_and_tp(symbol="BTCUSDT")
                     self.launch_procedures(binance, log, trade_results)
@@ -261,5 +267,6 @@ class EmaFractalsInit:
                 self.debug.actualize_data(self)
                 updated = True
             except Exception as e:
+                self.warn.debug_file()
                 self.warn.logs.add_log(f'\n\nWARNING UPDATE FUNCTION: \n{e}\n')
-                time.sleep(100)
+                time.sleep(self.fast_wait)
