@@ -53,22 +53,20 @@ class TradeResults:
 
         len_low = 1
         len_high = 1
-
-        if not last_open_time[0] == time_pos_open:  # Check if not in the first unclosed candle.
-            if self.coin.long:
-                if low_wicks[len_low] <= stop_loss:  # Below SL
-                    target_hit = True
-                    win = False
-                elif high_wicks[len_high] >= take_profit:  # Above TP
-                    target_hit = True
-                    win = True
-            else:
-                if high_wicks[len_high] >= stop_loss:  # Above SL
-                    target_hit = True
-                    win = False
-                elif low_wicks[len_low] <= take_profit:  # Below TP
-                    target_hit = True
-                    win = True
+        if self.coin.long:
+            if low_wicks[len_low] <= stop_loss:  # Below SL
+                target_hit = True
+                win = False
+            elif high_wicks[len_high] >= take_profit:  # Above TP
+                target_hit = True
+                win = True
+        else:
+            if high_wicks[len_high] >= stop_loss:  # Above SL
+                target_hit = True
+                win = False
+            elif low_wicks[len_low] <= take_profit:  # Below TP
+                target_hit = True
+                win = True
 
         return win, target_hit
 
