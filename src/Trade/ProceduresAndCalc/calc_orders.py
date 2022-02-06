@@ -1,11 +1,9 @@
-from src.Miscellaneous.warn_user import Warn
 from src.Miscellaneous.settings import Parameters
 
 
 class CalcOrders:
     def __init__(self, coin, client, log, lowest_quantity):
         self.settings = Parameters()
-        self.warn = Warn()
 
         self.lowest_quantity = lowest_quantity
 
@@ -81,42 +79,50 @@ class CalcOrders:
 
     def stop_loss_calc_ema_fractals(self):
         data, error = self.coin.data.loc, False
-        i = self.settings.study_range - 2
+        i = self.coin.last_closed_candle_index - 2
         low = data[i, 'low']
         high = data[i, 'high']
         stop_loss = 0
-
-        if self.coin.long:
-            if low > data[i, 'ema100']:
-                if data[i, 'ema20'] > low > data[i, 'ema50']:
-                    stop_loss = data[i + 2, 'ema50']
-                elif low < data[i, 'ema20'] and low < data[i, 'ema50']:
-                    stop_loss = data[i + 2, 'ema100']
-                else:
-                    print("Error in stop loss calculation")
-                    error = True
-            else:
-                print("Trade cancelled ! Wrong candle position related to 100 ema")
-                error = True
-        else:
-            if high < data[i, 'ema100']:
-                if data[i, 'ema20'] < high < data[i, 'ema50']:
-                    stop_loss = data[i + 2, 'ema50']
-                elif high > data[i, 'ema20'] and high > data[i, 'ema50']:
-                    stop_loss = data[i + 2, 'ema100']
-                else:
-                    print("Error in stop loss calculation")
-                    error = True
-            else:
-                print("Trade cancelled ! Wrong candle position related to 100 ema")
-                error = True
-
-        if not error:
-            self.check_sl(stop_loss=stop_loss)
+        try:
             if self.coin.long:
-                stop_loss -= self.buffer * stop_loss
+                if low > data[i, 'ema100']:
+                    if data[i, 'ema20'] > low > data[i, 'ema50']:
+                        stop_loss = data[i + 2, 'ema50']
+                    elif low < data[i, 'ema20'] and low < data[i, 'ema50']:
+                        stop_loss = data[i + 2, 'ema100']
+                    else:
+                        print("Error in stop loss calculation")
+                        error = True
+                else:
+                    print("Trade cancelled ! Wrong candle position related to 100 ema")
+                    error = True
             else:
-                stop_loss += self.buffer * stop_loss
+                if high < data[i, 'ema100']:
+                    if data[i, 'ema20'] < high < data[i, 'ema50']:
+                        stop_loss = data[i + 2, 'ema50']
+                    elif high > data[i, 'ema20'] and high > data[i, 'ema50']:
+                        stop_loss = data[i + 2, 'ema100']
+                    else:
+                        print("Error in stop loss calculation")
+                        error = True
+                else:
+                    print("Trade cancelled ! Wrong candle position related to 100 ema")
+                    error = True
+
+            if not error:
+                self.check_sl(stop_loss=stop_loss)
+                if self.coin.long:
+                    stop_loss -= self.buffer * stop_loss
+                else:
+                    stop_loss += self.buffer * stop_loss
+        except Exception as error:
+            self.log("\n\nBot stopped ! The error message is : \n")
+            self.log(f"{error}")
+            self.log(f"\n\nThe current index maximum is {self.coin.last_closed_candle_index}")
+            self.log(f"\n\nThe data info is : {self.coin.data.info()}")
+            self.log(f"\n\nData print : {self.coin.data}")
+
+            raise ValueError
 
         return int(stop_loss)
 
