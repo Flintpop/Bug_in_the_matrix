@@ -38,7 +38,6 @@ class Program:
                 client = Client(api_key, secret_key)
                 successful_login = True
             except Exception as e:
-                print(traceback.format_exc())
                 print(e)
                 print("Wrong password. Please try again.")
 

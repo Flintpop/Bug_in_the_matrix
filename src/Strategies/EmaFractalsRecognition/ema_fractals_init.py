@@ -57,10 +57,10 @@ class EmaFractalsInit:
                 if self.ema_right_pos and self.long:
                     self.check_price_not_touching()
                     if self.price_far_from_ema:
-                        log("\n\nPrice far from ema !")
                         while self.price_far_from_ema:
                             self.check_price_not_touching()
-                            self.update()
+                            if self.price_far_from_ema:
+                                self.update()
                         self.check_emas()
                         while not self.william_signal and not self.price_far_from_ema and self.ema_right_pos:
                             self.check_price_not_touching()
@@ -70,7 +70,7 @@ class EmaFractalsInit:
                                 self.indicators.long = self.long
                                 self.william_signal = True
                             else:
-                                self.update()
+                                self.update("fast")
                         self.check_emas()
 
                         if self.last_tests() and self.ema_right_pos and self.long:
@@ -213,7 +213,7 @@ class EmaFractalsInit:
                 trade_results.update(self, self.debug)
         if order_filled:
             trade.entry_price = order_entry_price
-            trade.entry_price_date = self.data.loc[self.last_closed_candle_index]
+            trade.entry_price_date = self.data.loc[self.last_closed_candle_index, 'open_date_time']
 
         return order_filled
 

@@ -52,8 +52,8 @@ class CalcOrders:
         self.quantity, self.leverage = self.lev_quant_calc(self.balance_available)
 
     def entry_price_calc(self):
-        entry_price = self.coin.data.loc[self.coin.study_range - 2, 'close']
-        entry_price_date = self.coin.data.loc[self.coin.study_range - 2, 'open_date_time']
+        entry_price = self.coin.data.loc[self.coin.last_closed_candle_index, 'close']
+        entry_price_date = self.coin.data.loc[self.coin.last_closed_candle_index, 'open_date_time']
 
         return entry_price, entry_price_date
 

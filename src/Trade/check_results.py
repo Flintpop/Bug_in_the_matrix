@@ -10,7 +10,7 @@ class TradeResults:
     def check_result(self, binance, log_master, symbol_index: int, last_money, current_money):
 
         log = self.debug.logs.add_log
-        win, target_hit = self.check_target(binance.stop_loss, binance.take_profit, binance.entry_price_date)
+        win, target_hit = self.check_target(binance.stop_loss, binance.take_profit)
         if target_hit:  # When an order is hit and the position is closed.
             binance.trade_in_going = False
             log("\n\n\nTarget hit ! Won ? | " + str(win))
@@ -40,13 +40,12 @@ class TradeResults:
             return True
         return False
 
-    def check_target(self, stop_loss, take_profit, time_pos_open):
+    def check_target(self, stop_loss, take_profit):
         # See if the position is closed, and if it is lost or won.
 
         # Get the data
         low_wicks = self.coin.data['low'].tail(2).values
         high_wicks = self.coin.data['high'].tail(2).values
-        last_open_time = self.coin.data['open_date_time'].tail(2).values
 
         target_hit = False
         win = False
