@@ -52,16 +52,15 @@ class EmaFractalsInit:
         stopped = False
         while not stopped:
             try:
-                self.update()
                 self.check_emas()
                 self.william_signal = False
                 if self.ema_right_pos and self.long:
                     self.check_price_not_touching()
                     if self.price_far_from_ema:
-                        log("\n\nPrice far from ema !")
                         while self.price_far_from_ema:
                             self.check_price_not_touching()
-                            self.update()
+                            if self.price_far_from_ema:
+                                self.update()
                         self.check_emas()
                         while not self.william_signal and not self.price_far_from_ema and self.ema_right_pos:
                             self.check_price_not_touching()
@@ -71,11 +70,12 @@ class EmaFractalsInit:
                                 self.indicators.long = self.long
                                 self.william_signal = True
                             else:
-                                self.update()
+                                self.update("fast")
                         self.check_emas()
 
                         if self.last_tests() and self.ema_right_pos and self.long:
                             self.init_trade()
+                self.update()
             except Exception as error:
                 stopped = True
 
@@ -115,24 +115,32 @@ class EmaFractalsInit:
             coin=self,
             client=self.client,
             log=log,
-            lowest_quantity=self.settings.lowest_quantity[0]
+            lowest_quantity=self.settings.lowest_quantity[0],
+            print_infos=False
         )
 
         binance.init_calculations(strategy="ema_fractals")
+        binance.last_calculations()
+        last_take_profit = binance.take_profit
         log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
 
         if binance.leverage > 0 and binance.quantity > 0.0:
             try:
                 trade_results = TradeResults(self, self.debug)
+                binance.print_infos = True
                 if self.settings.limit_order_mode:
                     if self.get_lower_price(binance, trade_results):
                         binance.init_calculations(strategy="ema_fractals")
+                        binance.take_profit = last_take_profit
+                        binance.last_calculations()
+
                         # binance.place_sl_and_tp(symbol="BTCUSDT")
                         self.launch_procedures(binance, log, trade_results)
                     else:
                         log(f"\n\nTrade cancelled, order price not filled")
                         binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
                 else:
+                    binance.last_calculations()
                     # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
                     # binance.place_sl_and_tp(symbol="BTCUSDT")
                     self.launch_procedures(binance, log, trade_results)
@@ -145,11 +153,11 @@ class EmaFractalsInit:
                 binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
                 binance.close_pos(symbol_string="BTCUSDT")
                 log("\n\n\nPositions closed.")
-                word_mail = f"<h3>Bot stopped !</h3>" \
+                word_mail = f"<h3>Trade cancelled !</h3>" \
                             f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
                             f"<p>Here is the traceback : </p>" \
                             f"<p>{traceback.format_exc()}</p>"
-                send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
+                send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
         else:
             log("\nTrade aborted because of leverage of quantity set to 0 !")
 
@@ -158,20 +166,21 @@ class EmaFractalsInit:
         self.debug.debug_trade_parameters(
             trade=binance,
             long=self.long,
-            symbol="BTCUSDT"
+            symbol_string="BTCUSDT"
         )
         infos = self.client.futures_account()
 
         last_money = float(infos["totalMarginBalance"])
-        date_pos_open = self.debug.get_time(self.study_range - 2)
 
         while binance.trade_in_going:
             infos = self.client.futures_account()
             current_money = float(infos["totalMarginBalance"])
-            target_hit = trade_results.check_result(binance, self.log_master, symbol=0,
-                                                    time_pos_open=date_pos_open,
+            target_hit = trade_results.check_result(binance,
+                                                    self.log_master,
+                                                    symbol_index=0,
                                                     current_money=current_money,
-                                                    last_money=last_money)
+                                                    last_money=last_money
+                                                    )
             if target_hit:
                 binance.trade_in_going = False
             else:
@@ -195,15 +204,18 @@ class EmaFractalsInit:
         elif order_entry_price > 10:
             order_entry_price.__round__(2)
 
+        # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
+
         i = 0
         while i < self.settings.limit_wait_price_order and not order_filled:
+            if not order_filled:
+                self.update()
+                trade_results.update(self, self.debug)
             order_filled = trade_results.check_limit_order(order_entry_price)
             i += 1
-            self.update()
-            trade_results.update(self, self.debug)
-
         if order_filled:
             trade.entry_price = order_entry_price
+            trade.entry_price_date = self.data.loc[self.last_closed_candle_index, 'open_date_time']
 
         return order_filled
 
@@ -261,5 +273,6 @@ class EmaFractalsInit:
                 self.debug.actualize_data(self)
                 updated = True
             except Exception as e:
+                self.warn.debug_file()
                 self.warn.logs.add_log(f'\n\nWARNING UPDATE FUNCTION: \n{e}\n')
-                time.sleep(100)
+                time.sleep(self.fast_wait / 2)

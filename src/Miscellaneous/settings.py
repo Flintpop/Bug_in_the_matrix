@@ -6,10 +6,10 @@ class Parameters:
         self.data_range = 200
         self.study_range = self.data_range
         self.waiting_time = self.get_waiting_time()
-        self.fast_wait_time = int(self.waiting_time / 2)
+        self.fast_wait_time = int(self.waiting_time / 5)
 
         # Trade related
-        self.limit_order_mode = False
+        self.limit_order_mode = True
         self.price_entry_coefficient = 12  # price reduction in the range between sl and raw entry price in %
         self.limit_wait_price_order = 4  # number of candles the bot waits before giving up on the trade
         self.risk_ratio = 1
@@ -52,17 +52,17 @@ class Parameters:
     def get_waiting_time(self):
         waiting_time = 0
         if self.interval_unit == '1m':
-            waiting_time = 55
+            waiting_time = 35
         elif self.interval_unit == '5m':
-            waiting_time = 270
+            waiting_time = 220
         elif self.interval_unit == '15m':
-            waiting_time = 870
+            waiting_time = 600
         elif self.interval_unit == '30m':
-            waiting_time = 1_770
+            waiting_time = 1_500
         elif self.interval_unit == '1h':
-            waiting_time = 3_570
+            waiting_time = 2_500
         elif self.interval_unit == '4h':
-            waiting_time = 14_350
+            waiting_time = 11_000
         return waiting_time
 
     def check_parameters_exception(self):

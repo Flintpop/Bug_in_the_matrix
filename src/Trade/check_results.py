@@ -7,17 +7,18 @@ class TradeResults:
         self.coin = coin
         self.debug = debug_obj
 
-    def check_result(self, binance, log_master, symbol, time_pos_open, last_money, current_money):
+    def check_result(self, binance, log_master, symbol_index: int, last_money, current_money):
 
         log = self.debug.logs.add_log
-        win, target_hit = self.check_target(binance.stop_loss, binance.take_profit, time_pos_open)
+        win, target_hit = self.check_target(binance.stop_loss, binance.take_profit)
         if target_hit:  # When an order is hit and the position is closed.
             binance.trade_in_going = False
             log("\n\n\nTarget hit ! Won ? | " + str(win))
 
-            time_pos_hit = self.debug.get_time(self.coin.study_range - 2)
+            # for some reason the real target hit is last_closed_candle_index + 1; small bug here maybe.
+            time_pos_hit = self.coin.data.loc[self.coin.last_closed_candle_index + 1, 'open_date_time']
             warn = Warn()
-            string_symbol = self.debug.get_current_trade_symbol(symbol_index=symbol)
+            symbol_string = self.debug.get_current_trade_symbol(symbol_index=symbol_index)
 
             close_price = binance.take_profit if win else binance.stop_loss
 
@@ -26,61 +27,57 @@ class TradeResults:
                 entry_price=binance.entry_price,
                 close_price=close_price,
                 time_pos_hit=time_pos_hit,
-                time_pos_open=time_pos_open,
+                time_pos_open=binance.entry_price_date,
                 win=win,
-                symbol=string_symbol,
+                symbol_string=symbol_string,
                 last_money=last_money,
                 current_money=current_money
             )
             trade_type_string = warn.trade_type_string(self.coin.long)
 
-            CalcOrders.add_to_trade_history(binance, string_symbol, trade_type_string, win, time_pos_open, time_pos_hit,
-                                            binance.current_balance, log_master)
+            CalcOrders.add_to_trade_history(binance, symbol_string, trade_type_string, win, binance.entry_price_date,
+                                            time_pos_hit, binance.current_balance, log_master)
             return True
         return False
 
-    def check_target(self, stop_loss, take_profit, time_pos_open):
+    def check_target(self, stop_loss, take_profit):
         # See if the position is closed, and if it is lost or won.
 
         # Get the data
-        low_wicks = self.coin.data['low'].tail(3).values
-        high_wicks = self.coin.data['high'].tail(3).values
-        last_open_time = self.coin.data['open_date_time'].tail(2).values
+        low_wicks = self.coin.data['low'].tail(5)
+        high_wicks = self.coin.data['high'].tail(5)
 
         target_hit = False
         win = False
 
-        len_low = len(low_wicks) - 2
-        len_high = len(high_wicks) - 2
-
-        if not last_open_time[0] == time_pos_open:  # Check if not in the first unclosed candle.
-            if self.coin.long:
-                if low_wicks[len_low] <= stop_loss:  # Below SL
-                    target_hit = True
-                    win = False
-                elif high_wicks[len_high] >= take_profit:  # Above TP
-                    target_hit = True
-                    win = True
-            else:
-                if high_wicks[len_high] >= stop_loss:  # Above SL
-                    target_hit = True
-                    win = False
-                elif low_wicks[len_low] <= take_profit:  # Below TP
-                    target_hit = True
-                    win = True
+        len_list = self.coin.last_closed_candle_index
+        if self.coin.long:
+            if low_wicks[len_list] <= stop_loss:  # Below SL
+                target_hit = True
+                win = False
+            elif high_wicks[len_list] >= take_profit:  # Above TP
+                target_hit = True
+                win = True
+        else:
+            if high_wicks[len_list] >= stop_loss:  # Above SL
+                target_hit = True
+                win = False
+            elif low_wicks[len_list] <= take_profit:  # Below TP
+                target_hit = True
+                win = True
 
         return win, target_hit
 
     def check_limit_order(self, target):
-        low_wicks = self.coin.data['low'].tail(1).values
-        high_wicks = self.coin.data['high'].tail(1).values
+        low_wicks = self.coin.data['low'].tail(5)
+        high_wicks = self.coin.data['high'].tail(5)
         target_hit = False
 
         if self.coin.long:
-            if float(low_wicks[0]) <= target:  # Below target
+            if float(low_wicks[self.coin.last_closed_candle_index]) <= target:  # Below target
                 target_hit = True
         else:
-            if float(high_wicks[0]) >= target:  # Above target
+            if float(high_wicks[self.coin.last_closed_candle_index]) >= target:  # Above target
                 target_hit = True
 
         return target_hit

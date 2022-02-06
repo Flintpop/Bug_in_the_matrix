@@ -70,7 +70,7 @@ class MacdDivergenceConditions:
     def is_obsolete(self):
         if self.coin.long:
             index = self.coin.low_prices_indexes[len(self.coin.low_prices_indexes) - 1]
-            r = Core.macd_cross_detection(self.coin.fake_bear_indexes, index, -5)  # Give True if not crossed; e.a if
+            r = Core.macd_cross_detection(self.coin.fake_bear_indexes, index, -5)  # Give True if not crossed; or if
             # the divergence is not obsolete.
         else:
             index = self.coin.high_prices_indexes[len(self.coin.high_prices_indexes) - 1]

@@ -101,8 +101,8 @@ class PrintUser:
     def actualize_data(self, coin):
         self.data = coin.data
 
-    def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol, threshold):
-        self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol)} "
+    def print_trade_aborted(self, crossed, divergence, good_macd_pos, symbol_index: int, threshold):
+        self.print_log(f"\n\nTrade cancelled on {self.get_current_trade_symbol(symbol_index)} "
                        f"because of : \n"
                        f"- crossed ? |         {crossed}"
                        f"\n- divergence ? |    {divergence}"
@@ -151,27 +151,26 @@ class PrintUser:
         string = "\n\nDivergence for " + word + " at : " + str(string_one) + " and " + str(string_two)
         self.logs.add_log(string)
 
-    def debug_trade_parameters(self, trade, long, symbol):
+    def debug_trade_parameters(self, trade, long: bool, symbol_string: str):
         log = self.logs.add_log
-        date = PrintUser.get_time(self, trade.entry_price_index)
 
-        log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol} market")
-        log(f"\nThe entry price is : {trade.entry_price} at : {date}")
+        log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol_string} market")
+        log(f"\nThe entry price is : {trade.entry_price} at : {trade.entry_price_date}")
         log(f"\nThe stop loss is : {trade.stop_loss}")
         log(f"\nThe take profit is : {trade.take_profit}")
 
-    def get_current_trade_symbol(self, symbol_index):
+    def get_current_trade_symbol(self, symbol_index: int):
         return self.settings.market_symbol_list[symbol_index]
 
     @staticmethod
-    def trade_type_string(long):
+    def trade_type_string(long: bool):
         if long:
             res = "long"
         else:
             res = "short"
         return res
 
-    def get_time(self, index):
+    def get_time(self, index: int):
         time_print = self.data['open_date_time']
         index = index + self.data_range - self.study_range + 2
         try:
