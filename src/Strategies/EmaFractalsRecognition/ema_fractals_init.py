@@ -204,13 +204,15 @@ class EmaFractalsInit:
         elif order_entry_price > 10:
             order_entry_price.__round__(2)
 
+        # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
+
         i = 0
         while i < self.settings.limit_wait_price_order and not order_filled:
-            order_filled = trade_results.check_limit_order(order_entry_price)
-            i += 1
             if not order_filled:
                 self.update()
                 trade_results.update(self, self.debug)
+            order_filled = trade_results.check_limit_order(order_entry_price)
+            i += 1
         if order_filled:
             trade.entry_price = order_entry_price
             trade.entry_price_date = self.data.loc[self.last_closed_candle_index, 'open_date_time']
@@ -273,4 +275,4 @@ class EmaFractalsInit:
             except Exception as e:
                 self.warn.debug_file()
                 self.warn.logs.add_log(f'\n\nWARNING UPDATE FUNCTION: \n{e}\n')
-                time.sleep(self.fast_wait)
+                time.sleep(self.fast_wait / 2)

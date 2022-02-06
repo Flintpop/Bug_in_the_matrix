@@ -6,7 +6,7 @@ class Parameters:
         self.data_range = 200
         self.study_range = self.data_range
         self.waiting_time = self.get_waiting_time()
-        self.fast_wait_time = int(self.waiting_time / 2)
+        self.fast_wait_time = int(self.waiting_time / 5)
 
         # Trade related
         self.limit_order_mode = True
