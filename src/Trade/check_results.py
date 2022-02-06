@@ -44,41 +44,40 @@ class TradeResults:
         # See if the position is closed, and if it is lost or won.
 
         # Get the data
-        low_wicks = self.coin.data['low'].tail(2).values
-        high_wicks = self.coin.data['high'].tail(2).values
+        low_wicks = self.coin.data['low'].tail(5)
+        high_wicks = self.coin.data['high'].tail(5)
 
         target_hit = False
         win = False
 
-        len_low = 1
-        len_high = 1
+        len_list = self.coin.last_closed_candle_index
         if self.coin.long:
-            if low_wicks[len_low] <= stop_loss:  # Below SL
+            if low_wicks[len_list] <= stop_loss:  # Below SL
                 target_hit = True
                 win = False
-            elif high_wicks[len_high] >= take_profit:  # Above TP
+            elif high_wicks[len_list] >= take_profit:  # Above TP
                 target_hit = True
                 win = True
         else:
-            if high_wicks[len_high] >= stop_loss:  # Above SL
+            if high_wicks[len_list] >= stop_loss:  # Above SL
                 target_hit = True
                 win = False
-            elif low_wicks[len_low] <= take_profit:  # Below TP
+            elif low_wicks[len_list] <= take_profit:  # Below TP
                 target_hit = True
                 win = True
 
         return win, target_hit
 
     def check_limit_order(self, target):
-        low_wicks = self.coin.data['low'].tail(2).values
-        high_wicks = self.coin.data['high'].tail(2).values
+        low_wicks = self.coin.data['low'].tail(5)
+        high_wicks = self.coin.data['high'].tail(5)
         target_hit = False
 
         if self.coin.long:
-            if float(low_wicks[1]) <= target:  # Below target
+            if float(low_wicks[self.coin.last_closed_candle_index]) <= target:  # Below target
                 target_hit = True
         else:
-            if float(high_wicks[1]) >= target:  # Above target
+            if float(high_wicks[self.coin.last_closed_candle_index]) >= target:  # Above target
                 target_hit = True
 
         return target_hit
