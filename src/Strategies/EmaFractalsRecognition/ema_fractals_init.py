@@ -205,6 +205,7 @@ class EmaFractalsInit:
 
         self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} $ at {trade.entry_price_date} and the "
                                 f"potential reduced one is {order_entry_price} $")
+        self.debug.logs.add_log(f"\nData information debug first entry price : \n{self.data.tail(8)}")
 
         # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
 
@@ -217,6 +218,7 @@ class EmaFractalsInit:
             i += 1
         if order_filled:
             trade.entry_price = order_entry_price
+            self.debug.logs.add_log(f"\nData information debug after order filled : \n{self.data.tail(8)}")
             trade.entry_price_date = self.data.loc[self.last_closed_candle_index, 'open_date_time']
 
         return order_filled

@@ -10,11 +10,12 @@ class Parameters:
 
         # Trade related
         self.limit_order_mode = True
-        self.price_entry_coefficient = 12  # price reduction in the range between sl and raw entry price in %
-        self.limit_wait_price_order = 4  # number of candles the bot waits before giving up on the trade
+        self.price_entry_coefficient = 19  # price reduction in the range between sl and raw entry price in %
+        self.limit_wait_price_order = 6  # number of candles the bot waits before giving up on the trade
         self.risk_ratio = 1
         self.risk_per_trade_brut = 18
-        self.buffer = 0.0045
+        # self.buffer = 0.0045
+        self.buffer = 0.0015
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100
 
         # EmaFractals trade related

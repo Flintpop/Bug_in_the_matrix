@@ -207,7 +207,6 @@ class CalcOrders:
                 leverage = leverage.__round__()
                 if money_traded > self.settings.lowest_money_binance and leverage >= 1:
                     quantity = (money_traded / self.entry_price) * leverage
-                    self.log(f"\nThe raw quantity is {quantity}")
 
                     count = 1
                     div = 1
@@ -222,15 +221,14 @@ class CalcOrders:
                     last_quantity = quantity
                     if not entered:
                         quantity = quantity.__round__()
-                        self.log(f"\nThe quantity is {quantity} and has been rounded of __round__()")
                     else:
                         quantity = quantity.__round__(count - 1)
-                        self.log(f"\nThe quantity is {quantity} and has been rounded of __round__({count - 1})")
 
                     # When it rounds, it can give quantity + lowest_quantity; this code is to avoid that and only get
                     # quantity rounded to the lower.
                     if quantity > self.lowest_quantity and last_quantity < quantity:
                         quantity = quantity - self.lowest_quantity
+                        quantity = quantity.__round__(count - 1)
                     elif quantity <= self.lowest_quantity:
                         quantity = 0
 
