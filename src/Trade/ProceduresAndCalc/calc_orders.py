@@ -23,7 +23,7 @@ class CalcOrders:
         self.current_balance = float(self.infos["totalMarginBalance"])
         self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
 
-        self.stop_loss = 0
+        self.stop_loss = -1
         self.entry_price, self.entry_price_date = 0, 0
         self.take_profit = 0
 
@@ -80,7 +80,6 @@ class CalcOrders:
         else:
             buffer = self.coin.high_wicks[high_l] * self.buffer
             stop_loss = self.coin.high_wicks[high_l] + buffer
-        print("The stop loss is : " + str(stop_loss))
         stop_loss.__round__()
 
         self.check_sl(stop_loss)
@@ -100,10 +99,11 @@ class CalcOrders:
                     elif low < data[i, 'ema20'] and low < data[i, 'ema50']:
                         stop_loss = data[i + 2, 'ema100']
                     else:
-                        print("Error in stop loss calculation")
+                        self.log("\nError in stop loss calculation, the current low is not between first and second "
+                                 "ema")
                         error = True
                 else:
-                    print("Trade cancelled ! Wrong candle position related to 100 ema")
+                    self.log("\nTrade cancelled ! Wrong candle position related to 100 ema")
                     error = True
             else:
                 if high < data[i, 'ema100']:
@@ -112,10 +112,11 @@ class CalcOrders:
                     elif high > data[i, 'ema20'] and high > data[i, 'ema50']:
                         stop_loss = data[i + 2, 'ema100']
                     else:
-                        print("Error in stop loss calculation")
+                        self.log("\nError in stop loss calculation, the current high is not between first and second "
+                                 "ema")
                         error = True
                 else:
-                    print("Trade cancelled ! Wrong candle position related to 100 ema")
+                    self.log("\nTrade cancelled ! Wrong candle position related to 100 ema")
                     error = True
 
             if not error:
@@ -168,7 +169,7 @@ class CalcOrders:
         debug.append_trade_history(datas)
 
     def lev_quant_calc(self, money_available):
-        money_divided = 1
+        money_divided = 1  # How much of the available money I want to take by trade
         money_traded = money_available / money_divided
 
         percentage_risked_trade = self.percentage_risk_calculation()
@@ -183,14 +184,14 @@ class CalcOrders:
 
         # If the lowest money I can put on the trade is superior to the money available, trade cancelled.
         if (lowest_entry_price_trade / leverage_diviseur) > self.balance_available:
-            leverage = 0
+            leverage = "lowest money that can be on the trade is superior to the money available"
             quantity = 0
         else:
             # If the minimum possible of what I can afford to lose is superior to the maximum of what I
             # can afford to lose, trade cancelled.
             if (lowest_entry_price_trade * (percentage_risked_trade / 100)) > \
                     (self.balance_available * (self.settings.risk_per_trade / 100)) and leverage <= 1:
-                leverage = 0
+                leverage = "the minimum possible risk of loss is superior to the maximum of what is to risk"
                 quantity = 0
             else:
                 # Having a leverage of 1 in the end, while reducing money exposition.
@@ -209,12 +210,11 @@ class CalcOrders:
                     self.log(f"\nThe raw quantity is {quantity}")
 
                     count = 1
-                    temp = self.lowest_quantity
                     div = 1
                     entered = False
 
                     # Determine where to round the quantity. entered is when lowest_quantity = 1
-                    while temp % div != 0:
+                    while self.lowest_quantity % div != 0:
                         div = div / 10
                         count += 1
                         entered = True
@@ -234,6 +234,8 @@ class CalcOrders:
                     elif quantity <= self.lowest_quantity:
                         quantity = 0
 
+                    self.log(f"\nThe final quantity, after lowest_quantity taken off or not is {quantity}")
+
                     quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
                     if self.print_infos:
                         self.print_infos_quantity_leverage(percentage_risked_trade, leverage, quantity)
@@ -243,7 +245,7 @@ class CalcOrders:
                     else:
                         self.log(f"\n\nWARNING LEVERAGE : BELOW 1 ({leverage})")
                     quantity = 0
-                    leverage = 0
+                    leverage = "money entry too low or leverage below 1"
 
         return quantity, leverage
 
@@ -259,9 +261,9 @@ class CalcOrders:
     def last_leverage_quantity_check(self, leverage, quantity):
         if leverage < 1:
             self.log("\n\n\nWARNING LEVERAGE : Leverage was set at 0 or below 1")
-            leverage = 0
+            leverage, quantity = "leverage too low", 0
         if quantity == 0:
-            leverage = 0
+            leverage = "quantity equal to 0"
             self.log("\nWARNING QUANTITY : Quantity was set at 0")
 
         return quantity, leverage
@@ -272,7 +274,8 @@ class CalcOrders:
         return int(leverage)
 
     def percentage_risk_calculation(self):
-        if self.stop_loss < self.entry_price:  # Determine if short or long, which change the operation
+        # Determine if short or long, which change the operation
+        if self.stop_loss < self.entry_price and self.stop_loss != -1:
             percentage_risked_trade = (1 - self.stop_loss / self.entry_price) * 100  # long
         else:
             percentage_risked_trade = (1 - self.entry_price / self.stop_loss) * 100  # short

@@ -159,7 +159,7 @@ class EmaFractalsInit:
                             f"<p>{traceback.format_exc()}</p>"
                 send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
         else:
-            log("\nTrade aborted because of leverage of quantity set to 0 !")
+            log(f"\nTrade aborted because of {binance.leverage}")
 
     def launch_procedures(self, binance: BinanceOrders, log, trade_results: TradeResults):
         log("\nOrders placed and position open !")
@@ -260,11 +260,11 @@ class EmaFractalsInit:
         return bool_down_buy_fractal, bool_up_sell_fractal
 
     def update(self, update_type=""):
+        self.warn.debug_file()
         if update_type == "fast":
             time.sleep(self.fast_wait)
         else:
             time.sleep(self.wait)
-        self.warn.debug_file()
         updated = False
 
         while not updated:
