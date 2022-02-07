@@ -170,11 +170,11 @@ class EmaFractalsInit:
         )
         infos = self.client.futures_account()
 
-        last_money = float(infos["totalMarginBalance"])
+        last_money = float(infos["totalMarginBalance"]).__round__(2)
 
         while binance.trade_in_going:
             infos = self.client.futures_account()
-            current_money = float(infos["totalMarginBalance"])
+            current_money = float(infos["totalMarginBalance"]).__round__(2)
             target_hit = trade_results.check_result(binance,
                                                     self.log_master,
                                                     symbol_index=0,
@@ -197,13 +197,13 @@ class EmaFractalsInit:
                                 (trade.stop_loss - trade.entry_price) * (self.settings.price_entry_coefficient / 100)
 
         if order_entry_price > 10000:
-            order_entry_price.__round__()
+            order_entry_price = order_entry_price.__round__()
         elif order_entry_price > 1000:
-            order_entry_price.__round__(2)
+            order_entry_price = order_entry_price.__round__(2)
         elif order_entry_price > 100:
-            order_entry_price.__round__(3)
+            order_entry_price = order_entry_price.__round__(3)
 
-        self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} at {trade.entry_price_date}$ and the "
+        self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} $ at {trade.entry_price_date} and the "
                                 f"potential reduced one is {order_entry_price} $")
 
         # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
@@ -250,12 +250,12 @@ class EmaFractalsInit:
         low = self.data.loc[:, 'low']
 
         bool_down_buy_fractal = low[middle_index - 1] > low[middle_index] < low[middle_index + 1]
-        bool_down_buy_fractal = bool_down_buy_fractal and low[middle_index - 2] > low[middle_index] < \
-                                low[middle_index + 2]
+        bool_down_buy_fractal = bool_down_buy_fractal and low[middle_index - 2] > low[middle_index] < low[middle_index
+                                                                                                          + 2]
 
         bool_up_sell_fractal = high[middle_index - 1] < high[middle_index] > high[middle_index + 1]
-        bool_up_sell_fractal = bool_up_sell_fractal and high[middle_index - 2] < high[middle_index] > \
-                               high[middle_index + 2]
+        bool_up_sell_fractal = bool_up_sell_fractal and high[middle_index - 2] < high[middle_index] > high[middle_index
+                                                                                                           + 2]
 
         return bool_down_buy_fractal, bool_up_sell_fractal
 
