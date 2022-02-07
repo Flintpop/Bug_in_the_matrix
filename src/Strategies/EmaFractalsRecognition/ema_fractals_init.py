@@ -137,7 +137,7 @@ class EmaFractalsInit:
                         # binance.place_sl_and_tp(symbol="BTCUSDT")
                         self.launch_procedures(binance, log, trade_results)
                     else:
-                        log(f"\n\nTrade cancelled, order price not filled")
+                        log(f"\nTrade cancelled, order price not filled")
                         binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
                 else:
                     binance.last_calculations()
@@ -196,13 +196,15 @@ class EmaFractalsInit:
             order_entry_price = trade.entry_price + \
                                 (trade.stop_loss - trade.entry_price) * (self.settings.price_entry_coefficient / 100)
 
+        if order_entry_price > 10000:
+            order_entry_price.__round__()
+        elif order_entry_price > 1000:
+            order_entry_price.__round__(2)
+        elif order_entry_price > 100:
+            order_entry_price.__round__(3)
+
         self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} at {trade.entry_price_date}$ and the "
                                 f"potential reduced one is {order_entry_price} $")
-
-        if order_entry_price > 1000:
-            order_entry_price.__round__()
-        elif order_entry_price > 10:
-            order_entry_price.__round__(2)
 
         # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
 

@@ -16,7 +16,7 @@ class TradeResults:
             log("\n\n\nTarget hit ! Won ? | " + str(win))
 
             # for some reason the real target hit is last_closed_candle_index + 1; small bug here maybe.
-            time_pos_hit = self.coin.data.loc[self.coin.last_closed_candle_index + 1, 'open_date_time']
+            time_pos_hit = self.coin.data.loc[self.coin.last_closed_candle_index, 'open_date_time']
             warn = Warn()
             symbol_string = self.debug.get_current_trade_symbol(symbol_index=symbol_index)
 
