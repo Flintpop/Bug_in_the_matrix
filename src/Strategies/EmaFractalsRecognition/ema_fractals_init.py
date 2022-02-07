@@ -196,7 +196,7 @@ class EmaFractalsInit:
             order_entry_price = trade.entry_price + \
                                 (trade.stop_loss - trade.entry_price) * (self.settings.price_entry_coefficient / 100)
 
-        self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} $ and the "
+        self.debug.logs.add_log(f"\n\nThe entry price is {trade.entry_price} at {trade.entry_price_date}$ and the "
                                 f"potential reduced one is {order_entry_price} $")
 
         if order_entry_price > 1000:
