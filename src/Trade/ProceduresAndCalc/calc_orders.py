@@ -232,8 +232,6 @@ class CalcOrders:
                     elif quantity <= self.lowest_quantity:
                         quantity = 0
 
-                    self.log(f"\nThe final quantity, after lowest_quantity taken off or not is {quantity}")
-
                     quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
                     if self.print_infos:
                         self.print_infos_quantity_leverage(percentage_risked_trade, leverage, quantity)

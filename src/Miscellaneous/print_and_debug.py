@@ -154,7 +154,7 @@ class PrintUser:
     def debug_trade_parameters(self, trade, long: bool, symbol_string: str):
         log = self.logs.add_log
 
-        log(f"\n\n\nIt is a {self.trade_type_string(long)} for the {symbol_string} market")
+        log(f"\n\nIt is a {self.trade_type_string(long)} for the {symbol_string} market")
         log(f"\nThe entry price is : {trade.entry_price} at : {trade.entry_price_date}")
         log(f"\nThe stop loss is : {trade.stop_loss}")
         log(f"\nThe take profit is : {trade.take_profit}")

@@ -124,40 +124,43 @@ class EmaFractalsInit:
         last_take_profit = binance.take_profit
         log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
 
-        if binance.leverage > 0 and binance.quantity > 0.0:
-            try:
-                trade_results = TradeResults(self, self.debug)
-                binance.print_infos = True
-                if self.settings.limit_order_mode:
-                    if self.get_lower_price(binance, trade_results):
-                        binance.init_calculations(strategy="ema_fractals")
-                        binance.take_profit = last_take_profit
-                        binance.last_calculations()
+        if isinstance(binance.leverage, int):
+            if binance.leverage > 0 and binance.quantity > 0.0:
+                try:
+                    trade_results = TradeResults(self, self.debug)
+                    binance.print_infos = True
+                    if self.settings.limit_order_mode:
+                        if self.get_lower_price(binance, trade_results):
+                            binance.init_calculations(strategy="ema_fractals")
+                            binance.take_profit = last_take_profit
+                            binance.last_calculations()
 
+                            # binance.place_sl_and_tp(symbol="BTCUSDT")
+                            self.launch_procedures(binance, log, trade_results)
+                        else:
+                            log(f"\nTrade cancelled, order price not filled")
+                            binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
+                    else:
+                        binance.last_calculations()
+                        # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
                         # binance.place_sl_and_tp(symbol="BTCUSDT")
                         self.launch_procedures(binance, log, trade_results)
-                    else:
-                        log(f"\nTrade cancelled, order price not filled")
-                        binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
+                except Exception as e:
+                    from src.watch_tower import send_email
+                    import traceback
+                    log("\n\nWARNING CRITICAL : Binance procedures failed ! Closing all position...\n\n")
+                    log(e)
+                    log(f"\n\n\ntraceback.format_exc")
+                    binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
+                    binance.close_pos(symbol_string="BTCUSDT")
+                    log("\n\n\nPositions closed.")
+                    word_mail = f"<h3>Trade cancelled !</h3>" \
+                                f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
+                                f"<p>Here is the traceback : </p>" \
+                                f"<p>{traceback.format_exc()}</p>"
+                    send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
                 else:
-                    binance.last_calculations()
-                    # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
-                    # binance.place_sl_and_tp(symbol="BTCUSDT")
-                    self.launch_procedures(binance, log, trade_results)
-            except Exception as e:
-                from src.watch_tower import send_email
-                import traceback
-                log("\n\nWARNING CRITICAL : Binance procedures failed ! Closing all position...\n\n")
-                log(e)
-                log(f"\n\n\ntraceback.format_exc")
-                binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
-                binance.close_pos(symbol_string="BTCUSDT")
-                log("\n\n\nPositions closed.")
-                word_mail = f"<h3>Trade cancelled !</h3>" \
-                            f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
-                            f"<p>Here is the traceback : </p>" \
-                            f"<p>{traceback.format_exc()}</p>"
-                send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
+                    log(f"\nTrade aborted because of {binance.leverage}")
         else:
             log(f"\nTrade aborted because of {binance.leverage}")
 
@@ -210,12 +213,14 @@ class EmaFractalsInit:
         # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
 
         i = 0
+        last_candle_date_time = self.data[self.last_closed_candle_index, 'open_date_time']
         while i < self.settings.limit_wait_price_order and not order_filled:
             if not order_filled:
                 self.update()
                 trade_results.update(self, self.debug)
             order_filled = trade_results.check_limit_order(order_entry_price)
-            i += 1
+            if last_candle_date_time != self.data[self.last_closed_candle_index, 'open_date_time']:
+                i += 1
         if order_filled:
             trade.entry_price = order_entry_price
             self.debug.logs.add_log(f"\nData information debug after order filled : \n{self.data.tail(8)}")
