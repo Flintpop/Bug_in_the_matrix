@@ -213,13 +213,13 @@ class EmaFractalsInit:
         # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
 
         i = 0
-        last_candle_date_time = self.data[self.last_closed_candle_index, 'open_date_time']
+        last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']
         while i < self.settings.limit_wait_price_order and not order_filled:
             if not order_filled:
                 self.update()
                 trade_results.update(self, self.debug)
             order_filled = trade_results.check_limit_order(order_entry_price)
-            if last_candle_date_time != self.data[self.last_closed_candle_index, 'open_date_time']:
+            if last_candle_date_time != self.data.loc[self.last_closed_candle_index, 'open_date_time']:
                 i += 1
         if order_filled:
             trade.entry_price = order_entry_price
