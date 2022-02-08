@@ -136,11 +136,12 @@ class EmaFractalsInit:
                             binance.take_profit = last_take_profit
                             binance.last_calculations()
 
-                            # binance.place_sl_and_tp(symbol="BTCUSDT")
+                            binance.place_sl_and_tp(symbol="BTCUSDT")
                             self.launch_procedures(binance, log, trade_results)
                         else:
                             log(f"\nTrade cancelled, order price not filled")
                             binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
+                            binance.close_pos(symbol_string="BTCUSDT")
                     else:
                         binance.last_calculations()
                         # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
@@ -211,7 +212,7 @@ class EmaFractalsInit:
                                 f"potential reduced one is {order_entry_price} $")
         self.debug.logs.add_log(f"\nData information debug first entry price : \n{self.data.tail(8)}")
 
-        # trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
+        trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
 
         i = 0
         last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']

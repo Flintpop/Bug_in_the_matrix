@@ -2,7 +2,7 @@
 class Parameters:
     def __init__(self):
         # Data related
-        self.interval_unit = '1m'
+        self.interval_unit = '1h'
         self.data_range = 200
         self.study_range = self.data_range
         self.waiting_time = self.get_waiting_time()
@@ -14,8 +14,8 @@ class Parameters:
         self.limit_wait_price_order = 6  # number of candles the bot waits before giving up on the trade
         self.risk_ratio = 1
         self.risk_per_trade_brut = 18
-        # self.buffer = 0.0045
-        self.buffer = 0.0015
+        self.buffer = 0.0045
+        # self.buffer = 0.0015
         self.risk_per_trade = 1 - self.risk_per_trade_brut / 100
 
         # EmaFractals trade related
