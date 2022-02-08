@@ -160,8 +160,8 @@ class EmaFractalsInit:
                                 f"<p>Here is the traceback : </p>" \
                                 f"<p>{traceback.format_exc()}</p>"
                     send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
-                else:
-                    log(f"\nTrade aborted because of {binance.leverage}")
+            else:
+                log(f"\nTrade aborted because of {binance.leverage}")
         else:
             log(f"\nTrade aborted because of {binance.leverage}")
 
