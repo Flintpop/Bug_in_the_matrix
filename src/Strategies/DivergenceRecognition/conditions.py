@@ -139,7 +139,7 @@ class MacdDivergenceConditions:
             print(self.debug)
             print(self.coin.data)
 
-    def buy_sell(self, index):  # TODO: Put a delta_ema here
+    def buy_sell(self, index):
         ema_trend = self.coin.ema_trend.tail(self.coin.study_range).values
         ema_fast = self.coin.ema_fast.tail(self.coin.study_range).values
         res = False

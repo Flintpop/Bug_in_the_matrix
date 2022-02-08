@@ -48,6 +48,13 @@ class Warn:
         f.write("File created at : " + str(datetime.datetime.now()))
         f.close()
 
+    @staticmethod
+    def write_on_file(word):
+        debug_file_path = os_path_fix() + "debug_file.txt"
+        f = open(debug_file_path, "w+")
+        f.write(word)
+        f.close()
+
 
 if __name__ == '__main__':
     warn = Warn()

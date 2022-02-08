@@ -90,6 +90,7 @@ class EmaFractalsInit:
                             f"<p>Here is the current small error msg : </p><p><b>{error}</b></p>" \
                             f"<p>Here is the traceback : </p>" \
                             f"<p>{traceback.format_exc()}</p>"
+                self.warn.write_on_file("Code -1\nBot stopped !")
                 send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
 
     # Check if last close candle does not make a negative raw risk percentage trade along with avoiding trade where

@@ -68,7 +68,6 @@ class HighLowHistory(Indicators):
         return bull_indexes, bear_indexes, fake_bull, fake_bear
 
     def high_low_finder_v2(self):
-        # TODO: Reduce the number of lines in high_low_finder_v2 using the latest Detector algorithms
 
         list_of_high_low = [[], [], [], [], [], [], [], [], [], [], [], []]
 

@@ -3,7 +3,6 @@ from binance.client import Client
 from src.Strategies.EmaFractalsRecognition.ema_fractals_init import EmaFractalsInit
 from src.Miscellaneous.security import GetData
 from src.Miscellaneous.settings import Parameters
-import traceback
 
 #####################################################################################
 """

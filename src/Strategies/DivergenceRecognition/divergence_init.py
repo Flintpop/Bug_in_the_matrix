@@ -158,7 +158,6 @@ class Divergence:
 
                 last_money = float(infos["totalMarginBalance"])
                 trade_results = TradeResults(self.coins[index_symbol], self.debugs[index_symbol])
-                date_pos_open = self.debugs[index_symbol].get_time(self.coins[index_symbol].study_range - 2)
 
                 while binance.trade_in_going:
                     infos = self.client.futures_account()

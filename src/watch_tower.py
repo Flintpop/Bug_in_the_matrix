@@ -63,10 +63,17 @@ class Watch:
             self.file.close()
 
     def check_bot_response(self, content, last_content):
-        # Todo: Find a way to make it print traceback of errors to save time.
         if content == last_content:
-            print("\n Bot stopped !")
-            send_email(f"The bot stopped at : {datetime.datetime.now()}", "Bot stopped !")
+            print("Bot stopped !")
+            stopped_and_detected = False
+            try:
+                collection = content.strip(" ")
+                stopped_and_detected = "Code" in collection
+            except Exception as e:
+                send_email(f"Could not strip the content in debug_file.txt\nError message : \n\n{e}",
+                           "Error in watch_tower.py")
+            if not stopped_and_detected:
+                send_email(f"The bot stopped at : {datetime.datetime.now()}", "Bot stopped !")
             return True
         else:
             sleep(self.wait)
