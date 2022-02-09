@@ -72,9 +72,14 @@ class EmaFractalsInit:
                             else:
                                 self.update("fast")
                         self.check_emas()
+                        last_test = self.last_tests()
 
-                        if self.last_tests() and self.ema_right_pos and self.long:
+                        if last_test and self.ema_right_pos and self.long:
                             self.init_trade()
+                        else:
+                            log(f"\n\nFalse trade signal due to : "
+                                f"\nClose candle below third ema ? {last_test}"
+                                f"\nEma properly positioned ? {self.ema_right_pos}")
                 self.update()
             except Exception as error:
                 stopped = True
