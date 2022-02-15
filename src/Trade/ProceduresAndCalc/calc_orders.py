@@ -47,7 +47,7 @@ class CalcOrders:
     def get_quantity_leverage(self):
         self.current_balance = float(self.infos["totalMarginBalance"])
         self.balance_available = self.current_balance - float(self.infos["totalPositionInitialMargin"])
-        self.quantity, self.leverage = self.lev_quant_calc(self.balance_available)
+        self.leverage, self.quantity = self.lev_quant_calc(self.balance_available)
 
     def entry_price_calc(self):
         entry_price = self.coin.data.loc[self.coin.last_closed_candle_index, 'close']
@@ -69,7 +69,7 @@ class CalcOrders:
             self.risk_ratio_adjusted = (self.take_profit - self.entry_price) / (self.entry_price - self.stop_loss)
         else:
             self.risk_ratio_adjusted = (self.entry_price - self.take_profit) / (self.stop_loss - self.entry_price)
-        self.risk_ratio_adjusted = self.risk_ratio_adjusted.__round__(2)
+        self.risk_ratio_adjusted = self.risk_ratio_adjusted.__round__(3)
 
     def stop_loss_calc(self):
         low_l = len(self.coin.low_wicks) - 1
@@ -120,7 +120,10 @@ class CalcOrders:
                     error = True
 
             if not error:
-                self.check_sl(stop_loss=stop_loss)
+                if (stop_loss > self.entry_price and self.coin.long) or \
+                        (stop_loss < self.entry_price and not self.coin.long):
+                    stop_loss = data[i + 2, 'ema100']
+                    self.check_sl(stop_loss=stop_loss)
                 if self.coin.long:
                     stop_loss -= self.buffer * stop_loss
                 else:
@@ -206,33 +209,9 @@ class CalcOrders:
 
                 leverage = leverage.__round__()
                 if money_traded > self.settings.lowest_money_binance and leverage >= 1:
-                    quantity = (money_traded / self.entry_price) * leverage
+                    quantity = self.calc_quantity(money_traded=money_traded, leverage=leverage)
 
-                    count = 1
-                    div = 1
-                    entered = False
-
-                    # Determine where to round the quantity. entered is when lowest_quantity = 1
-                    while self.lowest_quantity % div != 0:
-                        div = div / 10
-                        count += 1
-                        entered = True
-
-                    last_quantity = quantity
-                    if not entered:
-                        quantity = quantity.__round__()
-                    else:
-                        quantity = quantity.__round__(count - 1)
-
-                    # When it rounds, it can give quantity + lowest_quantity; this code is to avoid that and only get
-                    # quantity rounded to the lower.
-                    if quantity > self.lowest_quantity and last_quantity < quantity:
-                        quantity = quantity - self.lowest_quantity
-                        quantity = quantity.__round__(count - 1)
-                    elif quantity <= self.lowest_quantity:
-                        quantity = 0
-
-                    quantity, leverage = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
+                    leverage, quantity = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
                     if self.print_infos:
                         self.print_infos_quantity_leverage(percentage_risked_trade, leverage, quantity)
                 else:
@@ -243,7 +222,34 @@ class CalcOrders:
                     quantity = 0
                     leverage = "money entry too low or leverage below 1"
 
-        return quantity, leverage
+        return leverage, quantity
+    
+    def calc_quantity(self, money_traded, leverage):
+        quantity = (money_traded / self.entry_price) * leverage
+        count = 1
+        div = 1
+        entered = False
+
+        # Determine where to round the quantity. entered is when lowest_quantity = 1
+        while self.lowest_quantity % div != 0:
+            div = div / 10
+            count += 1
+            entered = True
+
+        last_quantity = quantity
+        if not entered:
+            quantity = quantity.__round__()
+        else:
+            quantity = quantity.__round__(count - 1)
+
+        # When it rounds, it can give quantity + lowest_quantity; this code is to avoid that and only get
+        # quantity rounded to the lower.
+        if quantity > self.lowest_quantity and last_quantity < quantity:
+            quantity -= self.lowest_quantity
+            quantity = quantity.__round__(count - 1)
+        elif quantity <= self.lowest_quantity:
+            quantity = 0
+        return quantity
 
     def print_infos_quantity_leverage(self, raw_risk, leverage, quantity):
         self.log(f"\n\nThe percentage risked on the trade is wo leverage : {raw_risk.__round__(2)} %")
@@ -262,7 +268,7 @@ class CalcOrders:
             leverage = "quantity equal to 0"
             self.log("\nWARNING QUANTITY : Quantity was set at 0")
 
-        return quantity, leverage
+        return leverage, quantity
 
     def leverage_calculation(self, percentage_risked):
         leverage = (1 / percentage_risked) * self.settings.risk_per_trade_brut
@@ -278,7 +284,7 @@ class CalcOrders:
         return percentage_risked_trade
 
     def correct_leverage(self, leverage, risk_trade):
-        while leverage * risk_trade * 1.5 >= 100:  # Not tested. Looks to work
+        while leverage * risk_trade * 1.2 >= 100:  # Not tested. Looks to work
             self.log("\nHigh risk of liquidation ! Reducing leverage...")
             leverage = leverage - (leverage * 0.1).__round__()
         if leverage >= 125:
