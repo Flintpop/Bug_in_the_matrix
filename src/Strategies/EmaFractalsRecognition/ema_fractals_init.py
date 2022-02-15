@@ -223,6 +223,7 @@ class EmaFractalsInit:
             order_filled = trade_results.check_limit_order(order_entry_price)
             if last_candle_date_time != self.data.loc[self.last_closed_candle_index, 'open_date_time']:
                 i += 1
+                last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']
         if order_filled:
             trade.entry_price = order_entry_price
             self.debug.logs.add_log(f"\nData information debug after order filled : \n{self.data.tail(8)}")
