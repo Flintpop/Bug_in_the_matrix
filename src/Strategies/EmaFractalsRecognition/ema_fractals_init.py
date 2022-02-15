@@ -8,16 +8,6 @@ from src.Trade.check_results import TradeResults
 from src.Miscellaneous.warn_user import Warn
 
 
-# OLD to do : - Clean all errors ✔️
-#  - Make the necessary objects compatible with this strategy (check target function for exemple) ✔️
-#  - Check for the last candle to be ignored ✔️
-#  - Deal with error management and implement send mail functions ✔️
-#  - Call properly the binance function ✔️
-#  - Change the main code to make it call this strategy properly. ✔️
-#  - Check the reliability of the update function and the indicators. ✔️
-#  - Implement trade records via log history object. ✔️
-
-
 class EmaFractalsInit:
     def __init__(self, client, settings: Parameters):
         self.settings = settings
@@ -72,9 +62,14 @@ class EmaFractalsInit:
                             else:
                                 self.update("fast")
                         self.check_emas()
+                        last_test = self.last_tests()
 
-                        if self.last_tests() and self.ema_right_pos and self.long:
+                        if last_test and self.ema_right_pos and self.long:
                             self.init_trade()
+                        else:
+                            log(f"\n\nFalse trade signal due to : "
+                                f"\nClose candle below third ema ? {last_test}"
+                                f"\nEma properly positioned ? {self.ema_right_pos}")
                 self.update()
             except Exception as error:
                 stopped = True
@@ -226,6 +221,7 @@ class EmaFractalsInit:
                 last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']
         if order_filled:
             trade.entry_price = order_entry_price
+            trade.calc_real_risk_ratio()
             self.debug.logs.add_log(f"\nData information debug after order filled : \n{self.data.tail(8)}")
             trade.entry_price_date = self.data.loc[self.last_closed_candle_index, 'open_date_time']
 
