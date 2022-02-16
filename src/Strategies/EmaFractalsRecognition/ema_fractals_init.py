@@ -112,25 +112,19 @@ class EmaFractalsInit:
             client=self.client,
             log=log,
             lowest_quantity=self.settings.lowest_quantity[0],
-            print_infos=False
+            print_infos=True
         )
 
         binance.init_calculations(strategy="ema_fractals")
         binance.last_calculations()
-        last_take_profit = binance.take_profit
         log("\n\nTrade parameters calculated. Checking for the very last verification procedures...")
 
         if isinstance(binance.leverage, int):
             if binance.leverage > 0 and binance.quantity > 0.0:
                 try:
                     trade_results = TradeResults(self, self.debug)
-                    binance.print_infos = True
                     if self.settings.limit_order_mode:
                         if self.get_lower_price(binance, trade_results):
-                            binance.init_calculations(strategy="ema_fractals")
-                            binance.take_profit = last_take_profit
-                            binance.last_calculations()
-
                             binance.place_sl_and_tp(symbol="BTCUSDT")
                             self.launch_procedures(binance, log, trade_results)
                         else:
@@ -138,7 +132,6 @@ class EmaFractalsInit:
                             binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
                             binance.close_pos(symbol_string="BTCUSDT")
                     else:
-                        binance.last_calculations()
                         # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
                         # binance.place_sl_and_tp(symbol="BTCUSDT")
                         self.launch_procedures(binance, log, trade_results)
@@ -213,7 +206,7 @@ class EmaFractalsInit:
         last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']
         while i < self.settings.limit_wait_price_order and not order_filled:
             if not order_filled:
-                self.update()
+                self.update("fast")
                 trade_results.update(self, self.debug)
             order_filled = trade_results.check_limit_order(order_entry_price)
             if last_candle_date_time != self.data.loc[self.last_closed_candle_index, 'open_date_time']:
@@ -222,6 +215,7 @@ class EmaFractalsInit:
         if order_filled:
             trade.entry_price = order_entry_price
             trade.calc_real_risk_ratio()
+            self.debug.logs.add_log(f"\nOrder filled !")
             self.debug.logs.add_log(f"\nData information debug after order filled : \n{self.data.tail(8)}")
             trade.entry_price_date = self.data.loc[self.last_closed_candle_index, 'open_date_time']
 

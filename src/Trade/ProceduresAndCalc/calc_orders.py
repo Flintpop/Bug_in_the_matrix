@@ -187,7 +187,7 @@ class CalcOrders:
 
         # If the lowest money I can put on the trade is superior to the money available, trade cancelled.
         if (lowest_entry_price_trade / leverage_diviseur) > self.balance_available:
-            leverage = "lowest money that can be on the trade is superior to the money available"
+            leverage = "the lowest money that can be on the trade is superior to the money available"
             quantity = 0
         else:
             # If the minimum possible of what I can afford to lose is superior to the maximum of what I
