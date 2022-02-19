@@ -13,6 +13,7 @@ class EmaFractalsInit:
         self.settings = settings
         self.client = client
         self.draw_plots = False
+        self.symbol_string = self.settings.market_symbol_list[0]
 
         self.ema_right_pos = False
         self.last_closed_candle_index = self.settings.study_range - 1
@@ -86,7 +87,7 @@ class EmaFractalsInit:
                             f"<p>Here is the traceback : </p>" \
                             f"<p>{traceback.format_exc()}</p>"
                 self.warn.write_on_file("Code -1\nBot stopped !")
-                send_email(word=word_mail, subject=f"Scan error in the market BTCUSDT")
+                send_email(word=word_mail, subject=f"Scan error in the market {self.symbol_string}")
 
     # Check if last close candle does not make a negative raw risk percentage trade along with avoiding trade where
     # the candle of william signal has the emas in the wrong position.
@@ -125,15 +126,16 @@ class EmaFractalsInit:
                     trade_results = TradeResults(self, self.debug)
                     if self.settings.limit_order_mode:
                         if self.get_lower_price(binance, trade_results):
-                            binance.place_sl_and_tp(symbol="BTCUSDT")
+                            binance.place_sl_and_tp(symbol=self.symbol_string)
                             self.launch_procedures(binance, log, trade_results)
                         else:
                             log(f"\nTrade cancelled, order price not filled")
-                            binance.cancel_all_orders_symbol(symbol_string="BTCUSDT")
-                            binance.close_pos(symbol_string="BTCUSDT")
+                            binance.cancel_all_orders_symbol(symbol_string=self.symbol_string)
+                            binance.close_pos(symbol_string=self.symbol_string)
                     else:
-                        # binance.open_trade(symbol="BTCUSDT") not going to enable it because of open trade limit
-                        # binance.place_sl_and_tp(symbol="BTCUSDT")
+                        # binance.open_trade(symbol=self.symbol_string) not going to enable it because of open trade
+                        # limit
+                        # binance.place_sl_and_tp(symbol=self.symbol_string)
                         self.launch_procedures(binance, log, trade_results)
                 except Exception as e:
                     from src.watch_tower import send_email
@@ -142,13 +144,13 @@ class EmaFractalsInit:
                     log(e)
                     log(f"\n\n\ntraceback.format_exc")
                     binance.cancel_all_orders(symbols_string=self.settings.market_symbol_list)
-                    binance.close_pos(symbol_string="BTCUSDT")
+                    binance.close_pos(symbol_string=self.symbol_string)
                     log("\n\n\nPositions closed.")
                     word_mail = f"<h3>Trade cancelled !</h3>" \
                                 f"<p>Here is the current small error msg : </p><p><b>{e}</b></p>" \
                                 f"<p>Here is the traceback : </p>" \
                                 f"<p>{traceback.format_exc()}</p>"
-                    send_email(word=word_mail, subject=f"Trade error in the market BTCUSDT")
+                    send_email(word=word_mail, subject=f"Trade error in the market self.symbol_string")
             else:
                 log(f"\nTrade aborted because of {binance.leverage}")
         else:
@@ -159,7 +161,7 @@ class EmaFractalsInit:
         self.debug.debug_trade_parameters(
             trade=binance,
             long=self.long,
-            symbol_string="BTCUSDT"
+            symbol_string=self.symbol_string
         )
         infos = self.client.futures_account()
 
@@ -200,7 +202,7 @@ class EmaFractalsInit:
                                 f"potential reduced one is {order_entry_price} $")
         self.debug.logs.add_log(f"\nData information debug first entry price : \n{self.data.tail(8)}")
 
-        trade.open_trade_limit(symbol="BTCUSDT", entry_price=order_entry_price)
+        trade.open_trade_limit(symbol=self.symbol_string, entry_price=order_entry_price)
 
         i = 0
         last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']
