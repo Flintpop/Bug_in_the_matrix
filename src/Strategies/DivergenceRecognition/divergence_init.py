@@ -151,8 +151,8 @@ class Divergence:
             log("\nInitiating binance procedures...")
 
             try:
-                binance.open_trade_market(symbol=string_symbol)
-                binance.place_sl_and_tp(symbol=string_symbol)
+                binance.open_trade_market(symbol_string=string_symbol)
+                binance.place_sl_and_tp(symbol_string=string_symbol)
                 log("\nOrders placed and position open !")
                 infos = self.client.futures_account()
 

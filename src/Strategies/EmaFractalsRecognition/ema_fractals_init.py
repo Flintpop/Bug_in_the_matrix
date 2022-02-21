@@ -83,23 +83,24 @@ class EmaFractalsInit:
                                        f"\n\nThe traceback is : "
                                        f"\n\n\n{traceback.format_exc()}")
                 word_mail = f"<h3>Bot stopped !</h3>" \
-                            f"<p>Here is the current small error msg : </p><p><b>{error}</b></p>" \
+                            f"<p>Here is the current error msg : </p><p><b>{error}</b></p>" \
                             f"<p>Here is the traceback : </p>" \
                             f"<p>{traceback.format_exc()}</p>"
                 self.warn.write_on_file("Code -1\nBot stopped !")
                 send_email(word=word_mail, subject=f"Scan error in the market {self.symbol_string}")
 
-    # Check if last close candle does not make a negative raw risk percentage trade along with avoiding trade where
-    # the candle of william signal has the emas in the wrong position.
     def last_tests(self):
+        """
+        Check if last close candle does not make a negative raw risk percentage trade along with avoiding trade where
+        the candle of william signal has the emas in the wrong position.
+
+        """
         index = self.last_closed_candle_index
         if self.long:
-            condition_one = self.data.loc[index - 2, 'close'] > \
-                            self.data.loc[index - 2, 'ema100']
+            condition_one = self.data.loc[index - 2, 'close'] > self.data.loc[index - 2, 'ema100']
             condition_two = self.data.loc[index, 'close'] > self.data.loc[index, 'ema100']
         else:
-            condition_one = self.data.loc[index - 2, 'close'] < \
-                            self.data.loc[index - 2, 'ema100']
+            condition_one = self.data.loc[index - 2, 'close'] < self.data.loc[index - 2, 'ema100']
             condition_two = self.data.loc[index, 'close'] < self.data.loc[index, 'ema100']
 
         return condition_one and condition_two
@@ -108,13 +109,8 @@ class EmaFractalsInit:
         self.warn.debug_file()
         log = self.warn.logs.add_log
         log("\n\nInitiating trade procedures...")
-        binance = BinanceOrders(
-            coin=self,
-            client=self.client,
-            log=log,
-            lowest_quantity=self.settings.lowest_quantity[0],
-            print_infos=True
-        )
+
+        binance = BinanceOrders(coin=self)
 
         binance.init_calculations(strategy="ema_fractals")
         binance.last_calculations()
@@ -126,7 +122,7 @@ class EmaFractalsInit:
                     trade_results = TradeResults(self, self.debug)
                     if self.settings.limit_order_mode:
                         if self.get_lower_price(binance, trade_results):
-                            binance.place_sl_and_tp(symbol=self.symbol_string)
+                            binance.place_sl_and_tp(symbol_string=self.symbol_string)
                             self.launch_procedures(binance, log, trade_results)
                         else:
                             log(f"\nTrade cancelled, order price not filled")
@@ -202,7 +198,7 @@ class EmaFractalsInit:
                                 f"potential reduced one is {order_entry_price} $")
         self.debug.logs.add_log(f"\nData information debug first entry price : \n{self.data.tail(8)}")
 
-        trade.open_trade_limit(symbol=self.symbol_string, entry_price=order_entry_price)
+        trade.place_limit_order(symbol_string=self.symbol_string, entry_price=order_entry_price)
 
         i = 0
         last_candle_date_time = self.data.loc[self.last_closed_candle_index, 'open_date_time']

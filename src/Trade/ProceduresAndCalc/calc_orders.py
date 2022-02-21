@@ -2,19 +2,28 @@ from src.Miscellaneous.settings import Parameters
 
 
 class CalcOrders:
-    def __init__(self, coin, client, log, lowest_quantity, print_infos):
+    """
+    Creates all parameters necessary to open a position => stop loss, take profit, entry price, leverage, quantity.
+
+    Needs last prices, highs, lows, risk per trade brut, risk ratio, logs, fees, binance client and long or short.\n
+    """
+    def __init__(self, coin):
+        """
+        Initialize the class.\n
+        :param coin: Object containing warn object, client object, pandas data object and last_closed_candle_index
+        :return: Nothing
+        """
         self.settings = Parameters()
 
-        self.lowest_quantity = lowest_quantity
-
         self.buffer = self.settings.buffer
-        self.client = client
 
         self.coin = coin
+        self.client = self.coin.client
+        self.lowest_quantity = self.settings.lowest_quantity[0]
 
         self.study_range = self.settings.study_range
         self.fees = self.settings.fees
-        self.log = log
+        self.log = self.coin.warn.logs.add_log
 
         self.trade_in_going = False
 
@@ -29,7 +38,6 @@ class CalcOrders:
 
         self.quantity, self.leverage = 0, 0
         self.risk_ratio_adjusted = self.settings.risk_ratio
-        self.print_infos = print_infos
 
     def init_calculations(self, strategy="divergence"):
         if not self.trade_in_going:
@@ -72,15 +80,13 @@ class CalcOrders:
         self.risk_ratio_adjusted = self.risk_ratio_adjusted.__round__(3)
 
     def stop_loss_calc(self):
-        low_l = len(self.coin.low_wicks) - 1
-        high_l = len(self.coin.high_wicks) - 1
         if self.coin.long:
-            buffer = self.coin.low_wicks[low_l] * self.buffer
-            stop_loss = self.coin.low_wicks[low_l] - buffer
+            buffer = self.coin.low_wicks[-1] * self.buffer
+            stop_loss = self.coin.low_wicks[-1] - buffer
         else:
-            buffer = self.coin.high_wicks[high_l] * self.buffer
-            stop_loss = self.coin.high_wicks[high_l] + buffer
-        stop_loss.__round__()
+            buffer = self.coin.high_wicks[-1] * self.buffer
+            stop_loss = self.coin.high_wicks[-1] + buffer
+        stop_loss = stop_loss.__round__()
 
         self.check_sl(stop_loss)
         return int(stop_loss)
@@ -212,8 +218,7 @@ class CalcOrders:
                     quantity = self.calc_quantity(money_traded=money_traded, leverage=leverage)
 
                     leverage, quantity = self.last_leverage_quantity_check(leverage=leverage, quantity=quantity)
-                    if self.print_infos:
-                        self.print_infos_quantity_leverage(percentage_risked_trade, leverage, quantity)
+                    self.print_infos_quantity_leverage(percentage_risked_trade, leverage, quantity)
                 else:
                     if money_traded < self.settings.lowest_money_binance:
                         self.log(f"\n\nWARNING MONEY ENTRY : TOO LOW ({money_traded.__round__(2)})")
