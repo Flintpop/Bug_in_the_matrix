@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from time import sleep
 import datetime
 from src.Miscellaneous.settings import Parameters
+from src.Miscellaneous.security import GetData
 
 
 def send_email(word, subject="Update in your project"):
@@ -12,7 +13,8 @@ def send_email(word, subject="Update in your project"):
     smtp_server = "smtp.gmail.com"
     sender_email = 'bestfriendnotifier@gmail.com'
     receiver_email = 'bestfriendnotifier@gmail.com'
-    password = 'lkkuxirbnhtpcavg'
+    password = GetData.get_email_password()
+    password = password[0]
     html = u"""\
     <html>
     <head>
