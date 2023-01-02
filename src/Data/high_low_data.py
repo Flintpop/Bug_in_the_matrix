@@ -4,7 +4,16 @@ from src.Data.data_detection_algorithms import Core
 
 
 class HighLowHistory(Indicators):
+    """
+    Builds and stores local highs and local lows of macd, candles wicks, and closed prices.
+    """
     def __init__(self, client, symbol, symbol_index):
+        """
+        Initialize the class with the correct data, in accordance to the client and the symbol pair.
+        :param client: Client binance API object to get plots data.
+        :param symbol: Symbol to also get binance plot data
+        :param symbol_index: Somewhat obsolete parameter used to use this strategy on multiple different pairs.
+        """
         super().__init__(client, symbol, symbol_index)
 
         self.bull_indexes, self.bear_indexes, self.fake_bull_indexes, self.fake_bear_indexes = \
@@ -22,6 +31,11 @@ class HighLowHistory(Indicators):
         self.low_macd, self.low_macd_indexes = self.list_r[10], self.list_r[11]
 
     def macd_trend_data(self):
+        """
+        Computes the macd trend. This gives the trend of the macd indicator in function of the candle.
+        :return: An array with all the indexes of the beginning of a macd trend. The index corresponds to a price / date
+        of the main pandas dataframe.
+        """
         last_macd_hist = self.data["Hist"].tail(self.study_range).values
 
         bull_indexes = []
@@ -34,7 +48,8 @@ class HighLowHistory(Indicators):
         successive_hist_macd_bear = 0
         successive_hist_macd_bull = 0
 
-        for i in range(self.study_range - 1):  # Fake bear and bull indexes
+        for i in range(self.study_range - 1):  # Fake means that the macd trend calculator doesn't take into account
+            # a trigger that, when reached, declares a new trend. This code was for debugging purpose.
             if last_macd_hist[i] > 0 > fake_macd_trend:
                 fake_bull.append(i)
                 fake_macd_trend = last_macd_hist[i]
@@ -68,7 +83,10 @@ class HighLowHistory(Indicators):
         return bull_indexes, bear_indexes, fake_bull, fake_bear
 
     def high_low_finder_v2(self):
-
+        """
+        Core function that builds the high low arrays.
+        :return:
+        """
         list_of_high_low = [[], [], [], [], [], [], [], [], [], [], [], []]
 
         prices = self.data['close'].tail(self.study_range).values
@@ -121,6 +139,10 @@ class HighLowHistory(Indicators):
         return list_of_high_low
 
     def indicators_init(self):
+        """
+        Initialize data. Used when the data set is updated, or when the class is created.
+        :return: Nothing.
+        """
         self.ema_trend = self.ema(600)
         self.ema_fast = self.ema(150)
 
@@ -140,5 +162,9 @@ class HighLowHistory(Indicators):
         self.low_macd, self.low_macd_indexes = self.list_r[10], self.list_r[11]
 
     def update_data(self):
+        """
+        Updates the indicators, overriding all preceding data (nothing is stored)
+        :return: Nothing.
+        """
         self.data = Data.download_data(self)
         self.indicators_init()

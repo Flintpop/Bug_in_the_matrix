@@ -5,7 +5,18 @@ from src.Miscellaneous.settings import Parameters
 
 
 class Data:
+    """
+    This class initialize and download the latest plots from binance API.
+    Several plots timeframe can be chosen.
+    """
     def __init__(self, client, symbol, symbol_index):
+        """
+        Keep in memory several useful (and common to different strategies) attributes.
+        Download the data and converts it to a "pandas.dataframe object".\n
+        :param client: Binance API connect object : "Client(api_key, secret_key)"
+        :param symbol: Trading pair symbol, i.e. : "BTCBUSD"
+        :param symbol_index: Index of the list of the currently used trading pairs
+        """
         settings = Parameters()
         self.symbol = symbol
         self.client = client
@@ -20,6 +31,11 @@ class Data:
         self.data = self.download_data()
 
     def download_data(self):
+        """
+        Choose the correct timeframe relatively to the one in attribute chosen via settings object and download the
+        latest data.\n
+        :return: panda dataframe of the latest plots of a chosen symbol
+        """
         if self.interval_unit == '1m':
             start_min = (self.data_range + 1)
             start_str = str(start_min) + ' minutes ago UTC'
@@ -39,15 +55,19 @@ class Data:
             start_min = (self.data_range + 1) * 4
             start_str = str(start_min) + ' hours ago UTC'
         else:
-            print("ERROR : Value of interval unit not specified in download_data in Data object function."
+            raise ValueError("ERROR : Value of interval unit not specified in download_data in Data object function."
                   f"The value in question : {self.interval_unit}")
-            raise ValueError
 
-        data = self.data_download(start_str)
+        data = self.download_raw_data_binance_api(start_str)
 
         return data
 
-    def data_download(self, start_str):
+    def download_raw_data_binance_api(self, start_str):
+        """
+        Download directly the data in relationship to the start_str parameter. This parameter dictates the timeframe.\n
+        :param start_str: Variable constructed via download_data of Data object.
+        :return: pandas.DataFrame object of the latest plots.
+        """
         data = pd.DataFrame(
             self.client.futures_historical_klines(symbol=self.symbol, start_str=start_str,
                                                   interval=self.interval_unit))
